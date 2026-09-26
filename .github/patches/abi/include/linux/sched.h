@@ -1572,9 +1572,6 @@ struct task_struct {
 	randomized_struct_fields_end
 
 	/* CPU-specific state of this task: */
-	ANDROID_KABI_RESERVE(6);
-	ANDROID_KABI_RESERVE(7);
-	ANDROID_KABI_RESERVE(8);
 	struct thread_struct		thread;
 
 	/*
