@@ -253,10 +253,16 @@ jobs:
           # KernelSU-Next (next) always builds at latest.
           # With SUSFS off, every root tracks latest instead of pins:
           # SukiSU-Ultra follows main (builtin only matters for SUSFS builds).
+          # 版本对应（重要）：只要启用 SUSFS，非 Next 的 root 一律使用审计 pin，
+          # 即使 commit_mode=latest。原因：susfs4ksu 的 10_enable_susfs_for_ksu.patch 只与
+          # KernelSU/ReSukiSU/SukiSU-Ultra 的“审计 commit”成对验证过；搭配最新 tip 会出现
+          # 大量 hunk reject（Kbuild / adb_root / sucompat / ksud_integration / supercall），
+          # 导致 SUSFS 步骤直接失败。
+          # KernelSU-Next 仍跟随其 dev-susfs tip（SUSFS 上游为 Next 维护独立分支）。
           if [ "${{ inputs.use_susfs }}" = "true" ]; then
-            KERNELSU_COMMIT="$(pick "$PIN_KERNELSU" https://github.com/tiann/KernelSU.git refs/heads/main)"
-            RESUKISU_COMMIT="$(pick "$PIN_RESUKISU" https://github.com/ReSukiSU/ReSukiSU.git refs/heads/main)"
-            SUKISU_ULTRA_COMMIT="$(pick "$PIN_SUKISU_ULTRA" https://github.com/SukiSU-Ultra/SukiSU-Ultra.git refs/heads/builtin)"
+            KERNELSU_COMMIT="$PIN_KERNELSU"
+            RESUKISU_COMMIT="$PIN_RESUKISU"
+            SUKISU_ULTRA_COMMIT="$PIN_SUKISU_ULTRA"
           else
             KERNELSU_COMMIT="$(resolve_sha https://github.com/tiann/KernelSU.git refs/heads/main)"
             RESUKISU_COMMIT="$(resolve_sha https://github.com/ReSukiSU/ReSukiSU.git refs/heads/main)"
