@@ -1,0 +1,74 @@
+name: DSH Fetch Failed Build Log
+
+# 目的：把【已失败】的构建运行日志抓下来并提交回仓库。
+#       CI 的 GITHUB_TOKEN 带 actions:read，能读同仓库的运行日志；
+#       提交回仓库后，任何人在没有 token 的情况下用 git fetch 就能读到失败原因。
+#
+# 触发：只在改动本文件时触发（避免噪音，也避免任何循环）。
+# 注意：用 GITHUB_TOKEN 推送产生的 push 事件不会再触发 workflow run，
+#       且提交信息里带 [skip ci]，双重保险。
+
+on:
+  push:
+    paths:
+      - '.github/workflows/dsh-fetch-log.yml'
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 抓取失败运行日志
+        run: |
+          mkdir -p ci-logs
+          for RID in 36272511006 36271787873; do
+            OUT="ci-logs/run-${RID}.md"
+            {
+              echo "# 运行 ${RID} 的日志快照"
+              echo
+              echo "## 元信息"
+              echo '```'
+              gh api "repos/${REPO}/actions/runs/${RID}" \
+                --jq '"name=\(.name)\nsha=\(.head_sha)\nstatus=\(.status)\nconclusion=\(.conclusion)\ncreated=\(.created_at)\nupdated=\(.updated_at)"' 2>&1 || true
+              echo '```'
+              echo
+              echo "## 各步骤状态"
+              echo '```'
+              gh api "repos/${REPO}/actions/runs/${RID}/jobs" \
+                --jq '.jobs[] | "JOB \(.name) \(.status)/\(.conclusion)", (.steps[] | "  \(.number) \(.status)/\(.conclusion) \(.name)")' 2>&1 || true
+              echo '```'
+              echo
+              echo "## 失败步骤的完整日志"
+              echo '```'
+              gh run view "${RID}" --log-failed 2>&1 || gh run view "${RID}" --log 2>&1 || echo '(两种方式都取不到)'
+              echo '```'
+            } > "${OUT}"
+            echo "写入 ${OUT}: $(wc -c < "${OUT}") 字节"
+          done
+          echo
+          echo "===== 顺手把关键错误行单独摘出来 ====="
+          grep -h -n -m 120 -E "error:|Error [0-9]|fatal|BUILD_BUG_ON|undeclared|No such file|undefined reference|expected|FAILED:" ci-logs/*.md > ci-logs/KEY-ERRORS.txt 2>/dev/null || true
+          echo "KEY-ERRORS.txt: $(wc -l < ci-logs/KEY-ERRORS.txt) 行"
+
+      - name: 提交回仓库
+        run: |
+          git config user.email "ci-bot@users.noreply.github.com"
+          git config user.name "ci-bot"
+          git add -f ci-logs
+          if git diff --cached --quiet; then
+            echo "没有变化，无需提交"
+          else
+            git commit -m "ci: 失败运行日志快照 [skip ci]"
+            git push origin "HEAD:${GITHUB_REF_NAME}" && echo "已推送" || echo "推送失败（继续，不影响后续步骤）"
+          fi
