@@ -82,16 +82,6 @@ body:
     validations:
         required: true
 
-  - type: checkboxes
-    attributes:
-        label: Have you tested both build variants?
-        description: You must test both Normal and Module Check Bypass variants before reporting
-        options:
-          - label: "Yes, I have tried both Normal and Module Check Bypass variants"
-            required: true
-    validations:
-        required: true
-
   - type: input
     attributes:
         label: Last Working Release

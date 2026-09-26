@@ -75,10 +75,6 @@ on:
         required: false
         type: boolean
         default: false
-      bypass:
-        required: false
-        type: boolean
-        default: false
       use_cache:
         description: "Enable ccache/bazel cache (restore/save via release buckets)"
         required: false
@@ -544,13 +540,6 @@ jobs:
     - name: Initialize Config Fragment
       run: touch "${{ github.workspace }}/wild_gki.fragment"
 
-    - name: Apply Kernel Bypass Hack
-      if: ${{ inputs.bypass == 'true' }}
-      uses: ./.github/actions/bypass-kernel
-      with:
-        version: ${{ inputs.version }}
-        bypass: true
-
     - name: Build Normal Kernel
       env:
         SOURCE_DATE_EPOCH: ${{ env.SOURCE_DATE_EPOCH }}
@@ -596,15 +585,6 @@ jobs:
         cache_bucket: "bazel-cache-${{ inputs.version }}-${{ inputs.variant }}"
         compression_level: 9
         github_token: ${{ github.token }}
-
-    - name: Build Bypass Kernel
-      if: inputs.build_bypass
-      env:
-        SOURCE_DATE_EPOCH: ${{ env.SOURCE_DATE_EPOCH }}
-        KBUILD_BUILD_TIMESTAMP: ${{ env.KBUILD_BUILD_TIMESTAMP }}
-      uses: ./.github/actions/build-kernel
-      with:
-        version: ${{ inputs.version }}
 
     - name: Consolidated Build Summary
       if: always()

@@ -61,11 +61,6 @@ on:
         required: false
         type: boolean
         default: false
-      bypass:
-        description: "Apply the kernel version-check bypass hack (disabled by default)"
-        required: false
-        type: boolean
-        default: false
       use_cache:
         description: "Enable ccache/bazel cache"
         required: false
@@ -187,6 +182,5 @@ jobs:
       droidspaces_commit: ${{ inputs.droidspaces_commit }}
       brand_name: ${{ inputs.brand_name }}
       abi_patches: ${{ inputs.abi_patches }}
-      bypass: ${{ inputs.bypass }}
       use_cache: ${{ inputs.use_cache }}
     secrets: inherit

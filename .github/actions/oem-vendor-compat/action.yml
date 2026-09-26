@@ -1,11 +1,15 @@
 name: 'OEM Vendor Compat (原厂版本串 / vermagic 对齐)'
 description: >-
-  让自编译内核的 UTS 版本串与 vermagic 与原厂内核**完全一致**。
-  厂商预编译模块（/vendor/lib/modules/*.ko）里写死了原厂 vermagic，
-  版本串或 vermagic 对不上时厂商模块会异常（vivo 上是 vivo_ts 探测失败，
-  其错误分支 list_del 崩链表 -> kernel BUG -> 黑屏重启）。
-  实测（vivo PD2339 / MTK6989 / Android16）：
-    原厂：6.1.145-android14-11-maybe-dirty SMP preempt mod_unload modversions vivo aarch64
+  只对齐 UTS 版本串与 MODULE_ARCH_VERMAGIC。
+  **它不能修复厂商模块加载**：modversions 的 module_layout CRC 是整棵树类型定义经 genksyms
+  算出的 ABI 指纹，与 vermagic 是两道**独立**的门。
+  实测（vivo PD2339 / MTK6989T / Android16）：本 action 生效后内核 vermagic 已与原厂逐字节
+  一致（6.1.145-android14-11-maybe-dirty SMP preempt mod_unload modversions vivo aarch64），
+  但 module_layout 仍为 0xea759d7f（原厂/厂商模块均为 0xe4a1dbce），厂商模块仍在
+  check_version() 的 bad_version 分支被拒 → `disagrees about version of symbol module_layout`
+  → `Exec format error` → 不开机。
+  结论：本 action 已被实测证伪（不能产生可用内核），保留仅作版本串一致性用途。
+  详见 D:\neiheidaima\_re\ABI_结论.md。
 
 inputs:
   version:

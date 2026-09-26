@@ -19,10 +19,6 @@ on:
         description: "Use ccache/bazel cache (restore/save)"
         type: boolean
         default: true
-      bypass:
-        description: "Apply kernel version-check bypass hack"
-        type: boolean
-        default: false
       kernel_build_version:
         description: "Kernel Version"
         type: choice
@@ -769,7 +765,6 @@ jobs:
       brand_name: ${{ inputs.brand_name }}
       abi_patches: ${{ inputs.abi_patches }}
       os_patch_level: ${{ inputs.os_patch_level }}
-      bypass: ${{ inputs.bypass }}
       use_cache: ${{ inputs.use_cache }}
     secrets: inherit
 
@@ -799,7 +794,6 @@ jobs:
       brand_name: ${{ inputs.brand_name }}
       abi_patches: ${{ inputs.abi_patches }}
       os_patch_level: ${{ inputs.os_patch_level }}
-      bypass: ${{ inputs.bypass }}
       use_cache: ${{ inputs.use_cache }}
     secrets: inherit
 
@@ -829,7 +823,6 @@ jobs:
       brand_name: ${{ inputs.brand_name }}
       abi_patches: ${{ inputs.abi_patches }}
       os_patch_level: ${{ inputs.os_patch_level }}
-      bypass: ${{ inputs.bypass }}
       use_cache: ${{ inputs.use_cache }}
     secrets: inherit
 
@@ -859,7 +852,6 @@ jobs:
       brand_name: ${{ inputs.brand_name }}
       abi_patches: ${{ inputs.abi_patches }}
       os_patch_level: ${{ inputs.os_patch_level }}
-      bypass: ${{ inputs.bypass }}
       use_cache: ${{ inputs.use_cache }}
     secrets: inherit
 
@@ -889,7 +881,6 @@ jobs:
       brand_name: ${{ inputs.brand_name }}
       abi_patches: ${{ inputs.abi_patches }}
       os_patch_level: ${{ inputs.os_patch_level }}
-      bypass: ${{ inputs.bypass }}
       use_cache: ${{ inputs.use_cache }}
     secrets: inherit
 
@@ -919,7 +910,6 @@ jobs:
       brand_name: ${{ inputs.brand_name }}
       abi_patches: ${{ inputs.abi_patches }}
       os_patch_level: ${{ inputs.os_patch_level }}
-      bypass: ${{ inputs.bypass }}
       use_cache: ${{ inputs.use_cache }}
     secrets: inherit
 
@@ -949,7 +939,6 @@ jobs:
       brand_name: ${{ inputs.brand_name }}
       abi_patches: ${{ inputs.abi_patches }}
       os_patch_level: ${{ inputs.os_patch_level }}
-      bypass: ${{ inputs.bypass }}
       use_cache: ${{ inputs.use_cache }}
     secrets: inherit
 
