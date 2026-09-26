@@ -63,6 +63,13 @@ on:
         required: false
         type: string
         default: Wild
+      oem_vermagic:
+        description: >-
+          与原厂一致的 MODULE_ARCH_VERMAGIC（留空=关闭；vivo 机型填 "vivo aarch64"）。
+          启用后同时把版本串对齐成原厂的 -<KMI>-maybe-dirty，厂商预编译模块才认。
+        required: false
+        type: string
+        default: 'vivo aarch64'
       bypass:
         required: false
         type: boolean
@@ -419,6 +426,14 @@ jobs:
 
     - name: Clean Kernel Flags
       uses: ./.github/actions/clean-kernel-flags
+
+    # 与原厂内核对齐版本串/vermagic，保证厂商预编译模块可正常加载
+    # （vivo 机型必开；其它厂商按原厂 boot.img 的 vermagic 填 oem_vermagic）
+    - name: OEM Vendor Compat
+      uses: ./.github/actions/oem-vendor-compat
+      with:
+        version: ${{ inputs.version }}
+        oem_vermagic: ${{ inputs.oem_vermagic }}
 
     - name: Scan and collect patch rejects
       id: scan

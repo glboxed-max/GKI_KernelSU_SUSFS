@@ -1,0 +1,87 @@
+name: 'OEM Vendor Compat (原厂版本串 / vermagic 对齐)'
+description: >-
+  让自编译内核的 UTS 版本串与 vermagic 与原厂内核**完全一致**。
+  厂商的预编译模块（/vendor/lib/modules/*.ko）内写死了原厂 vermagic，
+  版本串或 vermagic 对不上时厂商模块无法正常加载/校验，会出现触控等模块
+  探测失败甚至内核 BUG（vivo 上是 vivo_ts 的错误分支 list_del 崩链表）。
+  实测（vivo PD2339 / MTK6989 / Android16）：
+    原厂：6.1.145-android14-11-maybe-dirty SMP preempt mod_unload modversions vivo aarch64
+  所以需要：release 保留 <KMI>-maybe-dirty，MODULE_ARCH_VERMAGIC 带 vivo。
+
+inputs:
+  version:
+    description: '组合版本号（如 android14-6.1）'
+    required: true
+  oem_vermagic:
+    description: >-
+      与原厂一致的 MODULE_ARCH_VERMAGIC 值（留空=关闭本步骤）。
+      vivo 机型为 "vivo aarch64"；其它厂商按原厂 boot.img 里的 vermagic 填。
+    required: false
+    default: ''
+
+runs:
+  using: "composite"
+  steps:
+    - name: 对齐原厂内核版本串与 vermagic
+      shell: bash
+      working-directory: ${{ github.workspace }}/kernel/common
+      run: |
+        set -euo pipefail
+
+        OEM_VERMAGIC="${{ inputs.oem_vermagic }}"
+        if [ -z "$OEM_VERMAGIC" ]; then
+          echo "[i] oem_vermagic 为空，跳过原厂对齐（保持默认 branding 行为）"
+          exit 0
+        fi
+
+        # 原厂 KMI 标记（与原厂 uname -r 的 <androidXX-YY> 段一致）
+        case "${{ inputs.version }}" in
+          "android12-5.10") KMI="android12-5"  ;;
+          "android13-5.10") KMI="android13-5"  ;;
+          "android13-5.15") KMI="android13-8"  ;;
+          "android14-5.15") KMI="android14-8"  ;;
+          "android14-6.1")  KMI="android14-11" ;;
+          "android15-6.6")  KMI="android15-8"  ;;
+          "android16-6.12") KMI="android16-5"  ;;
+          *)                KMI=""              ;;
+        esac
+
+        echo "[i] OEM vermagic = '$OEM_VERMAGIC'"
+        echo "[i] KMI 标记     = '$KMI'"
+
+        # 1) 版本串：与原厂一致 => -<KMI>-maybe-dirty
+        if [ -n "$KMI" ]; then
+          if [ -f scripts/setlocalversion ]; then
+            sed -i '$d' scripts/setlocalversion
+            echo "echo \"-${KMI}-maybe-dirty\"" >> scripts/setlocalversion
+            chmod +x scripts/setlocalversion
+            echo "[+] setlocalversion 末行已改为: echo \"-${KMI}-maybe-dirty\""
+          else
+            echo "[!] 未找到 scripts/setlocalversion，跳过版本串对齐"
+          fi
+        else
+          echo "[!] 未知 version='${{ inputs.version }}'，跳过版本串对齐"
+        fi
+
+        # 2) vermagic 架构串：原厂带厂商标记，厂商模块只认它
+        TARGET="arch/arm64/include/asm/module.h"
+        if ! grep -q 'MODULE_ARCH_VERMAGIC' "$TARGET" 2>/dev/null; then
+          TARGET="include/linux/vermagic.h"
+        fi
+        if [ ! -f "$TARGET" ] || ! grep -q 'MODULE_ARCH_VERMAGIC' "$TARGET"; then
+          echo "[x] 错误：在两个候选文件里都没找到 MODULE_ARCH_VERMAGIC 定义"
+          exit 1
+        fi
+        sed -i "s|^#define[[:space:]]\+MODULE_ARCH_VERMAGIC.*|#define MODULE_ARCH_VERMAGIC\t\"${OEM_VERMAGIC}\"|" "$TARGET"
+        if ! grep -q "MODULE_ARCH_VERMAGIC.*${OEM_VERMAGIC}" "$TARGET"; then
+          echo "[x] 错误：MODULE_ARCH_VERMAGIC 未能写入 $TARGET"
+          grep -n 'MODULE_ARCH_VERMAGIC' "$TARGET" || true
+          exit 1
+        fi
+        echo "[+] 已写入 $TARGET:"
+        grep -n 'MODULE_ARCH_VERMAGIC' "$TARGET" | head -3
+
+        # 提交，避免构建时树脏
+        git add -A
+        git -c user.name="oem-compat" -c user.email="oem-compat@local" \
+            commit -m "OEM: 对齐原厂内核版本串与 vermagic (${KMI:-unknown} / ${OEM_VERMAGIC})" || true
