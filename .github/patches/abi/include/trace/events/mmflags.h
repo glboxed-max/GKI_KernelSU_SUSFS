@@ -137,9 +137,9 @@ IF_HAVE_PG_UNCACHED(PG_uncached,	"uncached"	)		\
 IF_HAVE_PG_HWPOISON(PG_hwpoison,	"hwpoison"	)		\
 IF_HAVE_PG_IDLE(PG_young,		"young"		)		\
 IF_HAVE_PG_IDLE(PG_idle,		"idle"		)		\
-	{1UL << PG_vital,		"vital"		},		\
-	{1UL << PG_staple,		"staple"		},		\
-	{1UL << PG_candi,		"candi"		}		\
+	,{1UL << PG_vital,		"vital"		}		\
+	,{1UL << PG_staple,		"staple"		}		\
+	,{1UL << PG_candi,		"candi"		}		\
 IF_HAVE_PG_ARCH_2(PG_arch_2,		"arch_2"	)		\
 IF_HAVE_PG_OEM_RESERVED(oem_reserved_1)					\
 IF_HAVE_PG_OEM_RESERVED(oem_reserved_2)					\
