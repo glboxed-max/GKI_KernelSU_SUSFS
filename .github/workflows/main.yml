@@ -121,6 +121,7 @@ jobs:
       root_flavor: ${{ steps.resolve.outputs.root_flavor }}
       root_commit: ${{ steps.resolve.outputs.root_commit }}
       root_matrix: ${{ steps.resolve.outputs.root_matrix }}
+      root_matrix_android16: ${{ steps.resolve.outputs.root_matrix_android16 }}
       susfs_commit_android12_5_10: ${{ steps.resolve.outputs.susfs_commit_android12_5_10 }}
       susfs_commit_android13_5_10: ${{ steps.resolve.outputs.susfs_commit_android13_5_10 }}
       susfs_commit_android13_5_15: ${{ steps.resolve.outputs.susfs_commit_android13_5_15 }}
@@ -325,6 +326,13 @@ jobs:
               ;;
           esac
           echo "root_matrix=$ROOT_MATRIX" >> "$GITHUB_OUTPUT"
+
+          # android16-6.12 专用矩阵：剔除 sukisu-ultra。
+          # 原因（版本对应，非强行兼容）：SukiSU-Ultra 的 SUSFS 线（builtin）与
+          # 其审计 pin 都未适配 6.12 的新 LSM API（security_add_hooks 需要 struct lsm_id），
+          # 编译会 -Werror 失败；上游尚未支持，因此不调度该组合，而不是打补丁硬凑。
+          ROOT_MATRIX_ANDROID16="$(printf '%s' "$ROOT_MATRIX" | jq -c '[.[] | select(.root_flavor != "sukisu-ultra")]')"
+          echo "root_matrix_android16=$ROOT_MATRIX_ANDROID16" >> "$GITHUB_OUTPUT"
 
           # SUSFS per supported Android/kernel branch (gitlab simonpunk/susfs4ksu).
           # Always emit the verified pinned SHA here; build.yml overrides to the
@@ -903,7 +911,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        root: ${{ fromJson(needs.resolve-sources.outputs.root_matrix) }}
+        root: ${{ fromJson(needs.resolve-sources.outputs.root_matrix_android16) }}
     uses: ./.github/workflows/prepare.yml
     with:
       config_file: .github/config/android16-6.12.json

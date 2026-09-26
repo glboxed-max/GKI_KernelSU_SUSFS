@@ -177,6 +177,15 @@ jobs:
         echo "ERROR: KowSU does not work together with SUSFS — re-run with SUSFS off." >&2
         exit 1
 
+    - name: Reject SukiSU-Ultra on android16-6.12 (upstream unsupported)
+      if: inputs.root_flavor == 'sukisu-ultra' && inputs.android_version == 'android16'
+      shell: bash
+      run: |
+        echo "ERROR: SukiSU-Ultra 未适配 6.12 的新 LSM API（security_add_hooks 需要 const struct lsm_id *），" >&2
+        echo "ERROR: 上游 builtin 分支与其审计 pin 均无 6.12 处理，编译必失败。" >&2
+        echo "ERROR: 按规则不做强行兼容——请为 6.12 选择 KernelSU-Next / ReSukiSU / KernelSU。" >&2
+        exit 1
+
     - name: Setup Selected Root Implementation
       if: inputs.root_flavor != '' && inputs.root_flavor != 'none'
       uses: ./.github/actions/root-setup
