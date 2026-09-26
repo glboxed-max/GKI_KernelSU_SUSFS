@@ -1,12 +1,12 @@
-# 最近失败的 CRC Probe 运行 36272511006
+# 最近失败的 CRC Probe 运行 36278613280
 
 ## 元信息
 ```
 name=CRC Probe (原厂 config ABI 对齐验证)
-sha=4d10e5dd16745a79e101024faba996fe57203385
+sha=4195a579f4fcb77754cdbd4a122202adb18a3ed7
 conclusion=failure
-created=2026-09-26T21:19:03Z
-updated=2026-09-26T21:31:27Z
+created=2026-09-26T23:10:37Z
+updated=2026-09-26T23:15:08Z
 ```
 
 ## 各步骤状态
@@ -21,111 +21,134 @@ JOB probe completed/failure
   7 completed/success 关掉 WERROR（-Warray-bounds 会误伤，且不影响 ABI）
   8 completed/success 应用 BTF 反推的 ABI 补丁
   9 completed/failure 构建 Image（自动补齐 module_outs 并重试）
-  10 completed/skipped 收集产物
-  11 completed/skipped 上传 Image
-  22 completed/success Post Checkout Repository
-  23 completed/success Complete job
+  10 completed/success 失败时上传 bazel 日志（供无 token 的协作者取用）
+  11 completed/skipped 收集产物
+  12 completed/skipped 上传 Image
+  13 completed/skipped 把 Image 挂到公开 Release（便于无 token 获取）
+  26 completed/success Post Checkout Repository
+  27 completed/success Complete job
 ```
 
 ## 编译错误行（已过滤）
 ```
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3675942Z arch/arm64/configs/gki_defconfig:4:warning: unexpected data: ﻿#
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3683648Z /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/mm/debug.c:35:2: error: expected '}'
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3692078Z /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/mm/debug.c:113:15: error: invalid application of 'sizeof' to an incomplete type 'const struct trace_print_flags[]'
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3693036Z         BUILD_BUG_ON(ARRAY_SIZE(pageflag_names) != __NR_PAGEFLAGS + 1);
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3696841Z /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/build_bug.h:50:19: note: expanded from macro 'BUILD_BUG_ON'
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3697725Z         BUILD_BUG_ON_MSG(condition, "BUILD_BUG_ON failed: " #condition)
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3699130Z /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/build_bug.h:39:58: note: expanded from macro 'BUILD_BUG_ON_MSG'
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3699958Z #define BUILD_BUG_ON_MSG(cond, msg) compiletime_assert(!(cond), msg)
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3709417Z make[3]: *** [/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/scripts/Makefile.build:250: mm/debug.o] Error 1
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3710393Z make[2]: *** [/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/scripts/Makefile.build:503: mm] Error 2
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3711889Z make[1]: *** [/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/Makefile:2068: .] Error 2
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3712582Z make: *** [Makefile:256: __sub-make] Error 2
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:14:14.9693196Z ^[[36;1m  grep -n -m 40 -E "error:|Error [0-9]|fatal error|BUILD_BUG_ON|No such file or directory|undeclared|note: expanded from macro|expected" /tmp/bazel.log || true^[[0m
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4395542Z 26:arch/arm64/configs/gki_defconfig:4:warning: unexpected data: ﻿#
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4397025Z 45:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/mm_types.h:559:1: error: extraneous closing brace ('}')
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4453041Z 1137:make[2]: *** [/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/scripts/Makefile.build:118: arch/arm64/kernel/asm-offsets.s] Error 1
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4453925Z 1138:make[1]: *** [/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/Makefile:1369: prepare0] Error 2
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4476593Z make[2]: *** [/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/scripts/Makefile.build:118: arch/arm64/kernel/asm-offsets.s] Error 1
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4477449Z make[1]: *** [/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/Makefile:1369: prepare0] Error 2
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4478507Z make: *** [Makefile:256: __sub-make] Error 2
 ```
 
 ## 失败步骤完整日志
 ```
-probe	构建 Image（自动补齐 module_outs 并重试）	﻿2026-09-26T21:28:11.7995141Z ##[group]Run set -uo pipefail
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:28:11.7995501Z ^[[36;1mset -uo pipefail^[[0m
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:28:11.7995814Z ^[[36;1msed -i 's/check_defconfig//' ./common/build.config.gki^[[0m
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:28:11.7996233Z ^[[36;1msed -i '/name = "kernel_aarch64",/a\    check_defconfig = "disabled",' common/BUILD.bazel^[[0m
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:28:11.7996631Z ^[[36;1mok=0^[[0m
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:28:11.7996839Z ^[[36;1mfor i in 1 2 3 4; do^[[0m
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:28:11.7997088Z ^[[36;1m  echo "===== Bazel 构建 第 $i 次 ====="^[[0m
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:28:11.7997467Z ^[[36;1m  if tools/bazel build --config=fast --disk_cache=/home/runner/.cache/bazel \^[[0m
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:28:11.7997867Z ^[[36;1m       //common:kernel_aarch64/Image > /tmp/bazel.log 2>&1; then^[[0m
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:28:11.7998180Z ^[[36;1m    ok=1; break^[[0m
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:28:11.7998394Z ^[[36;1m  fi^[[0m
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:28:11.7998636Z ^[[36;1m  tail -60 /tmp/bazel.log || true^[[0m
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:28:11.7999073Z ^[[36;1m  python3 "$GITHUB_WORKSPACE/.github/tools/bazel_module_outs.py" /tmp/bazel.log common/BUILD.bazel || break^[[0m
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:28:11.7999590Z ^[[36;1mdone^[[0m
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:28:11.7999821Z ^[[36;1m[ "$ok" = "1" ] || { echo "构建失败"; exit 1; }^[[0m
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:28:11.8034912Z shell: /usr/bin/bash -e {0}
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:28:11.8035194Z env:
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:28:11.8035484Z   KERNEL_SOURCE_COMMIT: 885bb3fe06d567751d15e7a7ba02e8ccc5dac01e
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:28:11.8035800Z ##[endgroup]
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:28:12.1787724Z ===== Bazel 构建 第 1 次 =====
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3644861Z  checking cached actions
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3645527Z INFO: Found 1 target...
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3649037Z [0 / 5] [Prepa] Writing file common/kernel_aarch64_all_module_names/kernel_aarch64_modules
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3650084Z [119 / 269] [Prepa] Creating symlink for python: @//build/kernel:hermetic-tools
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3669137Z [243 / 278] Creating wrapper for tar: @//build/kernel:hermetic-tools; 0s remote-cache, processwrapper-sandbox
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3670388Z [267 / 278] Creating wrapper for rsync: @//build/kernel:hermetic-tools; 0s remote-cache, processwrapper-sandbox ... (2 actions running)
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3671317Z [269 / 278] checking cached actions
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3672066Z [271 / 278] [Prepa] Creating abi_symbollist and report @//common:kernel_aarch64_kmi_symbol_list ... (2 actions, 0 running)
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3672985Z [273 / 278] [Prepa] Creating abi_symbollist.raw @//common:kernel_aarch64_raw_kmi_symbol_list
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3674026Z [274 / 278] Creating kernel config (lto=fast;trim) @//common:kernel_aarch64_config; 0s local
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3674930Z INFO: From Creating kernel config (lto=fast;trim) @//common:kernel_aarch64_config:
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3675942Z arch/arm64/configs/gki_defconfig:4:warning: unexpected data: ﻿#
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3676688Z [275 / 278] [Prepa] Building kernel (lto=fast;trim) @//common:kernel_aarch64
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3677341Z [275 / 278] Building kernel (lto=fast;trim) @//common:kernel_aarch64; 1s local
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3677992Z [275 / 278] Building kernel (lto=fast;trim) @//common:kernel_aarch64; 10s local
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3678691Z [275 / 278] Building kernel (lto=fast;trim) @//common:kernel_aarch64; 40s local
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3679588Z [275 / 278] Building kernel (lto=fast;trim) @//common:kernel_aarch64; 100s local
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3680292Z [275 / 278] Building kernel (lto=fast;trim) @//common:kernel_aarch64; 160s local
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3681700Z ERROR: /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/BUILD.bazel:139:22: Building kernel (lto=fast;trim) @//common:kernel_aarch64 failed: (Exit 2): bash failed: error executing KernelBuild command (from target //common:kernel_aarch64) /bin/bash -c ... (remaining 1 argument skipped)
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3683648Z /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/mm/debug.c:35:2: error: expected '}'
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3684359Z         __def_pageflag_names,
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3686828Z         ^
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3687739Z /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/trace/events/mmflags.h:140:2: note: expanded from macro '__def_pageflag_names'
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3688888Z         {1UL << PG_vital,               "vital"         },              \
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3689424Z         ^
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3690003Z /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/mm/debug.c:34:51: note: to match this '{'
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3690725Z const struct trace_print_flags pageflag_names[] = {
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3691221Z                                                   ^
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3692078Z /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/mm/debug.c:113:15: error: invalid application of 'sizeof' to an incomplete type 'const struct trace_print_flags[]'
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3693036Z         BUILD_BUG_ON(ARRAY_SIZE(pageflag_names) != __NR_PAGEFLAGS + 1);
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3693796Z         ~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3694636Z /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/kernel.h:55:32: note: expanded from macro 'ARRAY_SIZE'
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3695568Z #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]) + __must_be_array(arr))
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3696101Z                                ^
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3696841Z /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/build_bug.h:50:19: note: expanded from macro 'BUILD_BUG_ON'
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3697725Z         BUILD_BUG_ON_MSG(condition, "BUILD_BUG_ON failed: " #condition)
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3698280Z         ~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3699130Z /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/build_bug.h:39:58: note: expanded from macro 'BUILD_BUG_ON_MSG'
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3699958Z #define BUILD_BUG_ON_MSG(cond, msg) compiletime_assert(!(cond), msg)
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3700572Z                                     ~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3701460Z /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/compiler_types.h:375:22: note: expanded from macro 'compiletime_assert'
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3702470Z         _compiletime_assert(condition, msg, __compiletime_assert_, __COUNTER__)
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3703081Z         ~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3704110Z /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/compiler_types.h:363:23: note: expanded from macro '_compiletime_assert'
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3705128Z         __compiletime_assert(condition, msg, prefix, suffix)
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3705774Z         ~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3706708Z /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/compiler_types.h:355:9: note: expanded from macro '__compiletime_assert'
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3707611Z                 if (!(condition))                                       \
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3708115Z                       ^~~~~~~~~
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3708717Z 2 errors generated.
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3709417Z make[3]: *** [/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/scripts/Makefile.build:250: mm/debug.o] Error 1
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3710393Z make[2]: *** [/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/scripts/Makefile.build:503: mm] Error 2
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3711241Z make[2]: *** Waiting for unfinished jobs....
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3711889Z make[1]: *** [/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/Makefile:2068: .] Error 2
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3712582Z make: *** [Makefile:256: __sub-make] Error 2
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3713110Z Target //common:kernel_aarch64/Image failed to build
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3714056Z Use --verbose_failures to see the command lines of failed build steps.
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3714770Z INFO: Elapsed time: 191.978s, Critical Path: 174.97s
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3715349Z INFO: 276 processes: 265 internal, 1 local, 10 processwrapper-sandbox.
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3716249Z ERROR: Build did NOT complete successfully
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3838419Z 没有解析到缺失模块
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3876923Z 构建失败
-probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3890201Z ##[error]Process completed with exit code 1.
+probe	构建 Image（自动补齐 module_outs 并重试）	﻿2026-09-26T23:14:14.9688660Z ##[group]Run set -uo pipefail
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:14:14.9689007Z ^[[36;1mset -uo pipefail^[[0m
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:14:14.9689330Z ^[[36;1msed -i 's/check_defconfig//' ./common/build.config.gki^[[0m
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:14:14.9689850Z ^[[36;1msed -i '/name = "kernel_aarch64",/a\    check_defconfig = "disabled",' common/BUILD.bazel^[[0m
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:14:14.9690279Z ^[[36;1mok=0^[[0m
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:14:14.9690482Z ^[[36;1mfor i in 1 2 3 4; do^[[0m
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:14:14.9690739Z ^[[36;1m  echo "===== Bazel 构建 第 $i 次 ====="^[[0m
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:14:14.9691176Z ^[[36;1m  if tools/bazel build --config=fast --disk_cache=/home/runner/.cache/bazel \^[[0m
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:14:14.9691689Z ^[[36;1m       //common:kernel_aarch64/Image > /tmp/bazel.log 2>&1; then^[[0m
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:14:14.9692040Z ^[[36;1m    ok=1; break^[[0m
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:14:14.9692264Z ^[[36;1m  fi^[[0m
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:14:14.9692512Z ^[[36;1m  echo "----- 真实 error 行（最多 40 条）-----"^[[0m
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:14:14.9693196Z ^[[36;1m  grep -n -m 40 -E "error:|Error [0-9]|fatal error|BUILD_BUG_ON|No such file or directory|undeclared|note: expanded from macro|expected" /tmp/bazel.log || true^[[0m
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:14:14.9693892Z ^[[36;1m  echo "----- tail 40 -----"^[[0m
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:14:14.9694167Z ^[[36;1m  tail -40 /tmp/bazel.log || true^[[0m
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:14:14.9694693Z ^[[36;1m  python3 "$GITHUB_WORKSPACE/.github/tools/bazel_module_outs.py" /tmp/bazel.log common/BUILD.bazel || break^[[0m
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:14:14.9695196Z ^[[36;1mdone^[[0m
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:14:14.9695415Z ^[[36;1m[ "$ok" = "1" ] || { echo "构建失败"; exit 1; }^[[0m
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:14:14.9759065Z shell: /usr/bin/bash -e {0}
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:14:14.9759329Z env:
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:14:14.9759602Z   KERNEL_SOURCE_COMMIT: 885bb3fe06d567751d15e7a7ba02e8ccc5dac01e
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:14:14.9759951Z ##[endgroup]
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:14:14.9871091Z ===== Bazel 构建 第 1 次 =====
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4376723Z ----- 真实 error 行（最多 40 条）-----
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4395542Z 26:arch/arm64/configs/gki_defconfig:4:warning: unexpected data: ﻿#
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4397025Z 45:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/mm_types.h:559:1: error: extraneous closing brace ('}')
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4399350Z 305:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:137:8: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4400988Z 328:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:137:24: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4402143Z 351:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:138:8: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4403266Z 374:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:138:24: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4404359Z 397:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:139:3: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4405717Z 420:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:140:3: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4406825Z 443:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:143:8: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4408348Z 466:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:143:24: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4410203Z 489:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:144:3: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4411853Z 512:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:137:8: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4413892Z 535:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:137:24: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4416014Z 558:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:138:8: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4418093Z 581:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:138:24: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4419701Z 604:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:139:3: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4421299Z 627:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:140:3: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4422667Z 650:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:143:8: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4423637Z 673:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:143:24: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4424615Z 696:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:144:3: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4425560Z 719:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:137:8: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4426515Z 742:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:137:24: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4427461Z 765:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:138:8: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4428705Z 788:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:138:24: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4429683Z 811:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:139:3: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4431103Z 834:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:140:3: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4432807Z 857:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:143:8: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4434560Z 880:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:143:24: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4436354Z 903:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:144:3: note: expanded from macro '_SIG_SET_BINOP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4438411Z 926:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:173:27: note: expanded from macro '_SIG_SET_OP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4440433Z 929:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:185:24: note: expanded from macro '_sig_not'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4442195Z 952:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:173:10: note: expanded from macro '_SIG_SET_OP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4443959Z 975:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:174:20: note: expanded from macro '_SIG_SET_OP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4445742Z 978:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:185:24: note: expanded from macro '_sig_not'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4447485Z 1001:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:174:3: note: expanded from macro '_SIG_SET_OP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4449800Z 1024:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:176:27: note: expanded from macro '_SIG_SET_OP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4450871Z 1027:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:185:24: note: expanded from macro '_sig_not'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4452050Z 1050:/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:176:10: note: expanded from macro '_SIG_SET_OP'
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4453041Z 1137:make[2]: *** [/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/scripts/Makefile.build:118: arch/arm64/kernel/asm-offsets.s] Error 1
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4453925Z 1138:make[1]: *** [/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/Makefile:1369: prepare0] Error 2
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4454433Z ----- tail 40 -----
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4454885Z In file included from /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/fs.h:33:
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4455658Z In file included from /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/percpu-rwsem.h:7:
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4456445Z In file included from /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/rcuwait.h:6:
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4457226Z In file included from /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/sched/signal.h:6:
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4458690Z /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:241:10: warning: array index 1 is past the end of the array (that has type 'unsigned long[1]') [-Warray-bounds]
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4459514Z         case 2: set->sig[1] = 0;
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4459754Z                 ^        ~
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4460329Z /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/uapi/asm-generic/signal.h:62:2: note: array 'sig' declared here
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4460949Z         unsigned long sig[_NSIG_WORDS];
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4461205Z         ^
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4461676Z In file included from /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/arch/arm64/kernel/asm-offsets.c:10:
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4462489Z In file included from /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/arm_sdei.h:8:
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4463261Z In file included from /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/acpi/ghes.h:5:
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4463990Z In file included from /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/acpi/apei.h:9:
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4464724Z In file included from /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/acpi.h:15:
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4465470Z In file included from /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/device.h:32:
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4466248Z In file included from /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/device/driver.h:21:
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4467166Z In file included from /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/module.h:19:
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4468195Z In file included from /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/elf.h:6:
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4468968Z In file included from /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/arch/arm64/include/asm/elf.h:141:
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4469727Z In file included from /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/fs.h:33:
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4470500Z In file included from /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/percpu-rwsem.h:7:
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4471295Z In file included from /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/rcuwait.h:6:
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4472083Z In file included from /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/sched/signal.h:6:
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4473155Z /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/signal.h:254:10: warning: array index 1 is past the end of the array (that has type 'unsigned long[1]') [-Warray-bounds]
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4474097Z         case 2: set->sig[1] = -1;
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4474344Z                 ^        ~
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4474908Z /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/uapi/asm-generic/signal.h:62:2: note: array 'sig' declared here
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4475535Z         unsigned long sig[_NSIG_WORDS];
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4475783Z         ^
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4475973Z 49 warnings and 1 error generated.
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4476593Z make[2]: *** [/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/scripts/Makefile.build:118: arch/arm64/kernel/asm-offsets.s] Error 1
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4477449Z make[1]: *** [/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/Makefile:1369: prepare0] Error 2
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4478214Z make[1]: *** Waiting for unfinished jobs....
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4478507Z make: *** [Makefile:256: __sub-make] Error 2
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4478830Z Target //common:kernel_aarch64/Image failed to build
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4479243Z Use --verbose_failures to see the command lines of failed build steps.
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4479645Z INFO: Elapsed time: 49.309s, Critical Path: 22.69s
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4480036Z INFO: 276 processes: 265 internal, 1 local, 10 processwrapper-sandbox.
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4480416Z ERROR: Build did NOT complete successfully
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4654864Z 没有解析到缺失模块
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4690779Z 构建失败
+probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T23:15:04.4704588Z ##[error]Process completed with exit code 1.
 ```
