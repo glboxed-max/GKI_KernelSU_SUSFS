@@ -132,6 +132,12 @@ static struct workqueue_struct *cgroup_destroy_wq;
 
 /* generate an array of cgroup subsystem pointers */
 #define SUBSYS(_x) [_x ## _cgrp_id] = &_x ## _cgrp_subsys,
+/*
+ * 前置声明：下方 cgroup_subsys[] 的初始化就要对 iolimit_cgrp_subsys 取地址，
+ * 而它的定义在文件末尾（见文件末尾的 iolimit 桩），C 不允许对未声明标识符取地址。
+ */
+extern struct cgroup_subsys iolimit_cgrp_subsys;
+
 struct cgroup_subsys *cgroup_subsys[] = {
 #include <linux/cgroup_subsys.h>
 };
