@@ -19,6 +19,15 @@ on:
         description: '应用 .github/patches/abi 下 BTF 反推的头文件补丁'
         type: boolean
         default: true
+  # 自动触发：只要 ABI 补丁 / 设备 config / 本 workflow 有推送，就自动构建一炉。
+  # 这样任何人的补丁改动都会被自动验证，且成功产物会挂到公开 Release（便于无 token 获取）。
+  # 注意：push 事件下 inputs.* 为空，所以下面所有用到 inputs 的地方都做了兜底。
+  push:
+    branches: [main]
+    paths:
+      - '.github/patches/**'
+      - '.github/config/vivo_pd2339_a16_defconfig'
+      - '.github/workflows/crc-probe.yml'
 
 permissions:
   contents: write
@@ -50,10 +59,10 @@ jobs:
           android_version: android14
           kernel_version: '6.1'
           version: android14-6.1
-          os_patch_level: ${{ inputs.os_patch_level }}
+          os_patch_level: ${{ inputs.os_patch_level || '2025-09' }}
 
       - name: 用原厂 config 覆盖 gki_defconfig
-        if: inputs.use_device_defconfig
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.use_device_defconfig }}
         run: |
           set -euo pipefail
           cp "$GITHUB_WORKSPACE/.github/config/vivo_pd2339_a16_defconfig" \
@@ -69,7 +78,7 @@ jobs:
           grep -n 'CONFIG_WERROR' "$D"
 
       - name: 应用 BTF 反推的 ABI 补丁
-        if: inputs.use_abi_patches
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.use_abi_patches }}
         run: |
           set -euo pipefail
           SRC="$GITHUB_WORKSPACE/.github/patches/abi"
