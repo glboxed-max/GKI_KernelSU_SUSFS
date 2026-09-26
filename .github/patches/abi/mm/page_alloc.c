@@ -676,7 +676,10 @@ void set_pfnblock_flags_mask(struct page *page, unsigned long flags,
 	unsigned long bitidx, word_bitidx;
 	unsigned long word;
 
-	BUILD_BUG_ON(NR_PAGEBLOCK_BITS != 4);
+	/* 原厂将 PB_migratetype_bits 提升为 7（NR_PAGEBLOCK_BITS=8）以容纳 9 种迁移类型。
+	 * 真正的约束是位域不跨 unsigned long 边界（set_pfnblock_flags_mask 只对单个
+	 * word 做 cmpxchg），而不是硬编码的 4。 */
+	BUILD_BUG_ON(BITS_PER_LONG % NR_PAGEBLOCK_BITS != 0);
 	BUILD_BUG_ON(MIGRATE_TYPES > (1 << PB_migratetype_bits));
 
 	bitmap = get_pageblock_bitmap(page, pfn);
