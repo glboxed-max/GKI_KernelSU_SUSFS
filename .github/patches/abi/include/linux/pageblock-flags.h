@@ -13,7 +13,7 @@
 
 #include <linux/types.h>
 
-#define PB_migratetype_bits 7 /* 与原厂一致：migrate 字段 7 位（MIGRATE_TYPES=11） */
+#define PB_migratetype_bits 7 /* 与原厂 BTF 一致：PB_migrate_end=6 ⇒ migrate 字段 7 位（MIGRATE_TYPES=9） */
 /* Bit indices that affect a whole block of pages */
 enum pageblock_bits {
 	PB_migrate,
