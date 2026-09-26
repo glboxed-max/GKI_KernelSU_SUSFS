@@ -260,9 +260,14 @@ jobs:
           # 导致 SUSFS 步骤直接失败。
           # KernelSU-Next 仍跟随其 dev-susfs tip（SUSFS 上游为 Next 维护独立分支）。
           if [ "${{ inputs.use_susfs }}" = "true" ]; then
+            # tiann KernelSU：SUSFS 通过外部 enable 补丁接入，必须与审计 pin 成对，故钉 pin。
             KERNELSU_COMMIT="$PIN_KERNELSU"
-            RESUKISU_COMMIT="$PIN_RESUKISU"
-            SUKISU_ULTRA_COMMIT="$PIN_SUKISU_ULTRA"
+            # ReSukiSU / SukiSU-Ultra：SUSFS 内置于各自分支（无需外部补丁）。
+            # 注意：其“审计 pin”已过旧——例如 SukiSU 的 e2912817 引用了
+            # kernel_umount_feature_set 却没有定义，编译必然失败（tip 已修复）。
+            # 因此这两个变体跟随各自分支 tip：ReSukiSU=main，SukiSU=builtin。
+            RESUKISU_COMMIT="$(resolve_sha https://github.com/ReSukiSU/ReSukiSU.git refs/heads/main)"
+            SUKISU_ULTRA_COMMIT="$(resolve_sha https://github.com/SukiSU-Ultra/SukiSU-Ultra.git refs/heads/builtin)"
           else
             KERNELSU_COMMIT="$(resolve_sha https://github.com/tiann/KernelSU.git refs/heads/main)"
             RESUKISU_COMMIT="$(resolve_sha https://github.com/ReSukiSU/ReSukiSU.git refs/heads/main)"
