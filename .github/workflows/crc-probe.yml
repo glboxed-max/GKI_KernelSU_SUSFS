@@ -21,7 +21,7 @@ on:
         default: true
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   probe:
@@ -132,3 +132,16 @@ jobs:
           path: ${{ github.workspace }}/AnyKernel3/Image
           if-no-files-found: error
           compression-level: 0
+
+      - name: 把 Image 挂到公开 Release（便于无 token 获取）
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -u
+          TAG="crc-probe-${GITHUB_SHA:0:8}"
+          gh release view "$TAG" >/dev/null 2>&1 && gh release delete "$TAG" --yes --cleanup-tag || true
+          gh release create "$TAG" \
+            --title "CRC Probe ${GITHUB_SHA:0:8}" \
+            --notes "自动发布：crc-probe 构建产物 Image（commit ${GITHUB_SHA}）。Release asset 公开，可直接下载。" \
+            "$GITHUB_WORKSPACE/AnyKernel3/Image" \
+          && echo "已发布 Release $TAG" || echo "Release 发布失败（忽略，不影响后续）"

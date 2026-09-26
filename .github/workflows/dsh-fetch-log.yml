@@ -1,14 +1,16 @@
 name: DSH Fetch Failed Build Log
 
-# 目的：把【已失败】的构建运行日志抓下来并提交回仓库。
-#       CI 的 GITHUB_TOKEN 带 actions:read，能读同仓库的运行日志；
-#       提交回仓库后，任何人在没有 token 的情况下用 git fetch 就能读到失败原因。
+# 目的：建立一条【无需任何 token 就能读】的反馈通道。
+#   CI 的 GITHUB_TOKEN 带 actions:read，能读本仓库的运行日志；
+#   把日志提交回仓库后，任何人在没有 token 的情况下用 git fetch 就能读到失败原因。
 #
-# 触发：只在改动本文件时触发（避免噪音，也避免任何循环）。
-# 注意：用 GITHUB_TOKEN 推送产生的 push 事件不会再触发 workflow run，
-#       且提交信息里带 [skip ci]，双重保险。
+# 触发：定时（每 10 分钟）+ 手动 + 改动本文件时。
+# 注意：用 GITHUB_TOKEN 推送不会再次触发 workflow run，且提交信息带 [skip ci]，双重保险。
 
 on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
   push:
     paths:
       - '.github/workflows/dsh-fetch-log.yml'
@@ -29,37 +31,86 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 抓取失败运行日志
+      - name: 抓取最近的运行概况
         run: |
           mkdir -p ci-logs
-          for RID in 36272511006 36271787873; do
-            OUT="ci-logs/run-${RID}.md"
-            {
-              echo "# 运行 ${RID} 的日志快照"
+          {
+            echo "# 运行概况快照 $(date -u +%FT%TZ)"
+            echo
+            echo '```'
+            gh api "repos/${REPO}/actions/runs?per_page=25" \
+              --jq '.workflow_runs[] | "\(.id)  \(.name)  \(.status)/\(.conclusion)  \(.head_sha[0:8])  \(.created_at)"' 2>&1 || true
+            echo '```'
+          } > ci-logs/runs-summary.md
+          echo "概况: $(wc -l < ci-logs/runs-summary.md) 行"
+
+      - name: 抓取最近一次失败的 CRC Probe 日志
+        run: |
+          set -u
+          RID=$(gh api "repos/${REPO}/actions/runs?per_page=40" \
+                 --jq '[.workflow_runs[] | select(.name|startswith("CRC Probe")) | select(.conclusion=="failure")][0].id' 2>/dev/null || echo "")
+          echo "最近失败的 CRC Probe 运行 id = ${RID:-（无）}"
+          if [ -z "$RID" ] || [ "$RID" = "null" ]; then
+            echo "(没有失败的 CRC Probe 运行)" > ci-logs/latest-failure.md
+            exit 0
+          fi
+          OUT="ci-logs/latest-failure.md"
+          {
+            echo "# 最近失败的 CRC Probe 运行 ${RID}"
+            echo
+            echo "## 元信息"
+            echo '```'
+            gh api "repos/${REPO}/actions/runs/${RID}" \
+              --jq '"name=\(.name)\nsha=\(.head_sha)\nconclusion=\(.conclusion)\ncreated=\(.created_at)\nupdated=\(.updated_at)"' 2>&1 || true
+            echo '```'
+            echo
+            echo "## 各步骤状态"
+            echo '```'
+            gh api "repos/${REPO}/actions/runs/${RID}/jobs" \
+              --jq '.jobs[] | "JOB \(.name) \(.status)/\(.conclusion)", (.steps[] | "  \(.number) \(.status)/\(.conclusion) \(.name)")' 2>&1 || true
+            echo '```'
+            echo
+            echo "## 编译错误行（已过滤）"
+            echo '```'
+            gh run view "${RID}" --log 2>/dev/null \
+              | grep -E "error:|Error [0-9]|fatal|BUILD_BUG_ON|undeclared|No such file|expected|FAILED:" \
+              | head -200 || echo '(无匹配)'
+            echo '```'
+            echo
+            echo "## 失败步骤完整日志"
+            echo '```'
+            gh run view "${RID}" --log-failed 2>&1 | tail -400 || gh run view "${RID}" --log 2>&1 | tail -400 || echo '(取不到)'
+            echo '```'
+          } > "${OUT}"
+          echo "写入 ${OUT}: $(wc -c < "${OUT}") 字节"
+
+      - name: 抓取最近成功的 CRC Probe 产物清单
+        run: |
+          set -u
+          RID=$(gh api "repos/${REPO}/actions/runs?per_page=40" \
+                 --jq '[.workflow_runs[] | select(.name|startswith("CRC Probe")) | select(.conclusion=="success")][0].id' 2>/dev/null || echo "")
+          echo "最近成功的 CRC Probe 运行 id = ${RID:-（无）}"
+          {
+            echo "# 最近成功的 CRC Probe 运行 ${RID:-无}"
+            echo
+            if [ -n "$RID" ] && [ "$RID" != "null" ]; then
+              echo '```'
+              gh api "repos/${REPO}/actions/runs/${RID}" --jq '"sha=\(.head_sha)\ncreated=\(.created_at)"' 2>&1 || true
+              echo '```'
               echo
-              echo "## 元信息"
+              echo "## 产物"
               echo '```'
-              gh api "repos/${REPO}/actions/runs/${RID}" \
-                --jq '"name=\(.name)\nsha=\(.head_sha)\nstatus=\(.status)\nconclusion=\(.conclusion)\ncreated=\(.created_at)\nupdated=\(.updated_at)"' 2>&1 || true
-              echo '```'
-              echo
-              echo "## 各步骤状态"
-              echo '```'
-              gh api "repos/${REPO}/actions/runs/${RID}/jobs" \
-                --jq '.jobs[] | "JOB \(.name) \(.status)/\(.conclusion)", (.steps[] | "  \(.number) \(.status)/\(.conclusion) \(.name)")' 2>&1 || true
+              gh api "repos/${REPO}/actions/runs/${RID}/artifacts" --jq '.artifacts[] | "\(.id)  \(.name)  \(.size_in_bytes) bytes  expired=\(.expired)"' 2>&1 || true
               echo '```'
               echo
-              echo "## 失败步骤的完整日志"
+              echo "## Release 资产（公开可取）"
               echo '```'
-              gh run view "${RID}" --log-failed 2>&1 || gh run view "${RID}" --log 2>&1 || echo '(两种方式都取不到)'
+              gh release list --limit 10 2>&1 || true
               echo '```'
-            } > "${OUT}"
-            echo "写入 ${OUT}: $(wc -c < "${OUT}") 字节"
-          done
-          echo
-          echo "===== 顺手把关键错误行单独摘出来 ====="
-          grep -h -n -m 120 -E "error:|Error [0-9]|fatal|BUILD_BUG_ON|undeclared|No such file|undefined reference|expected|FAILED:" ci-logs/*.md > ci-logs/KEY-ERRORS.txt 2>/dev/null || true
-          echo "KEY-ERRORS.txt: $(wc -l < ci-logs/KEY-ERRORS.txt) 行"
+            else
+              echo "(暂无成功的 CRC Probe 运行)"
+            fi
+          } > ci-logs/latest-success.md
 
       - name: 提交回仓库
         run: |
@@ -69,6 +120,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "没有变化，无需提交"
           else
-            git commit -m "ci: 失败运行日志快照 [skip ci]"
-            git push origin "HEAD:${GITHUB_REF_NAME}" && echo "已推送" || echo "推送失败（继续，不影响后续步骤）"
+            git commit -m "ci: 运行日志/产物快照 [skip ci]"
+            git push origin "HEAD:${GITHUB_REF_NAME}" && echo "已推送" || echo "推送失败（忽略）"
           fi
