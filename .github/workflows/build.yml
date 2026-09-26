@@ -70,6 +70,11 @@ on:
         required: false
         type: string
         default: 'vivo aarch64'
+      abi_patches:
+        description: '应用 .github/patches/abi 下 BTF 反推的头文件补丁（复现厂商 ABI）'
+        required: false
+        type: boolean
+        default: false
       bypass:
         required: false
         type: boolean
@@ -434,6 +439,25 @@ jobs:
       with:
         version: ${{ inputs.version }}
         oem_vermagic: ${{ inputs.oem_vermagic }}
+
+    # 按原厂 BTF 回填的结构体字段补丁（用于复现厂商 ABI / modversions CRC）
+    - name: Apply ABI Patches (BTF derived)
+      if: inputs.abi_patches
+      shell: bash
+      run: |
+        set -euo pipefail
+        SRC="${{ github.workspace }}/.github/patches/abi"
+        cd "${{ github.workspace }}/kernel/common"
+        n=0
+        while IFS= read -r f; do
+          rel="${f#$SRC/}"
+          cp "$f" "$rel"
+          echo "[+] 覆盖 $rel"
+          n=$((n+1))
+        done < <(find "$SRC" -type f)
+        echo "共应用 $n 个 ABI 头文件补丁"
+        git add -A
+        git -c user.name="abi-patch" -c user.email="abi-patch@local" commit -m "ABI: 按原厂 BTF 回填结构体字段" || true
 
     - name: Scan and collect patch rejects
       id: scan
