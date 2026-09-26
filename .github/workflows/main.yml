@@ -338,12 +338,17 @@ jobs:
             [susfs_commit_android15_6_6]="gki-android15-6.6"
             [susfs_commit_android16_6_12]="gki-android16-6.12"
           )
+          # 说明（版本对应）：SUSFS 提交在这里始终输出“已审计的 pin”，即使 commit_mode=latest。
+          # 原因：susfs4ksu 的 gki-* 分支 tip 可能包含仅适配 KernelSU-Next 的 hook
+          # （例如 ksu_handle_post_execveat_sucompat），而 SukiSU-Ultra/ReSukiSU/KernelSU 中
+          # 只有 ksu_handle_execveat_sucompat，用 tip 会 undefined symbol 链接失败。
+          # 仅 KernelSU-Next 由 build.yml 在构建时覆盖为该分支 tip（上游设计如此）。
           for key in "${!SUSFS_BRANCHES[@]}"; do
-            emit "$key" "$(pick "${PIN_SUSFS[$key]}" https://gitlab.com/simonpunk/susfs4ksu.git refs/heads/${SUSFS_BRANCHES[$key]})"
+            emit "$key" "${PIN_SUSFS[$key]}"
             # Per-flavor ReSukiSU SUSFS pin (same branch, own pin set).
-            emit "${key}_resukisu" "$(pick "${PIN_SUSFS_RESUKISU[$key]}" https://gitlab.com/simonpunk/susfs4ksu.git refs/heads/${SUSFS_BRANCHES[$key]})"
+            emit "${key}_resukisu" "${PIN_SUSFS_RESUKISU[$key]}"
             # Per-flavor SukiSU-Ultra SUSFS pin (same branch, own pin set).
-            emit "${key}_sukisu_ultra" "$(pick "${PIN_SUSFS_SUKISU_ULTRA[$key]}" https://gitlab.com/simonpunk/susfs4ksu.git refs/heads/${SUSFS_BRANCHES[$key]})"
+            emit "${key}_sukisu_ultra" "${PIN_SUSFS_SUKISU_ULTRA[$key]}"
           done
 
           # Tracked build helpers (resolved automatically, before the run)
