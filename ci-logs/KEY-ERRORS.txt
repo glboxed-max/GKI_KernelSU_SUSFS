@@ -1,0 +1,24 @@
+65:probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:13:29.9281124Z arch/arm64/configs/gki_defconfig:4:warning: unexpected data: ﻿#
+72:probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:13:29.9287383Z /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/mm/debug.c:35:2: error: expected '}'
+81:probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:13:29.9293034Z /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/mm/debug.c:113:15: error: invalid application of 'sizeof' to an incomplete type 'const struct trace_print_flags[]'
+82:probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:13:29.9293915Z         BUILD_BUG_ON(ARRAY_SIZE(pageflag_names) != __NR_PAGEFLAGS + 1);
+87:probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:13:29.9297223Z /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/build_bug.h:50:19: note: expanded from macro 'BUILD_BUG_ON'
+88:probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:13:29.9297985Z         BUILD_BUG_ON_MSG(condition, "BUILD_BUG_ON failed: " #condition)
+90:probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:13:29.9299211Z /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/build_bug.h:39:58: note: expanded from macro 'BUILD_BUG_ON_MSG'
+91:probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:13:29.9299999Z #define BUILD_BUG_ON_MSG(cond, msg) compiletime_assert(!(cond), msg)
+103:probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:13:29.9306999Z make[3]: *** [/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/scripts/Makefile.build:250: mm/debug.o] Error 1
+104:probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:13:29.9307599Z make[2]: *** [/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/scripts/Makefile.build:503: mm] Error 2
+106:probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:13:29.9308124Z make[1]: *** [/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/Makefile:2068: .] Error 2
+107:probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:13:29.9308377Z make: *** [Makefile:256: __sub-make] Error 2
+64:probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3675942Z arch/arm64/configs/gki_defconfig:4:warning: unexpected data: ﻿#
+72:probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3683648Z /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/mm/debug.c:35:2: error: expected '}'
+81:probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3692078Z /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/mm/debug.c:113:15: error: invalid application of 'sizeof' to an incomplete type 'const struct trace_print_flags[]'
+82:probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3693036Z         BUILD_BUG_ON(ARRAY_SIZE(pageflag_names) != __NR_PAGEFLAGS + 1);
+87:probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3696841Z /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/build_bug.h:50:19: note: expanded from macro 'BUILD_BUG_ON'
+88:probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3697725Z         BUILD_BUG_ON_MSG(condition, "BUILD_BUG_ON failed: " #condition)
+90:probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3699130Z /home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/include/linux/build_bug.h:39:58: note: expanded from macro 'BUILD_BUG_ON_MSG'
+91:probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3699958Z #define BUILD_BUG_ON_MSG(cond, msg) compiletime_assert(!(cond), msg)
+103:probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3709417Z make[3]: *** [/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/scripts/Makefile.build:250: mm/debug.o] Error 1
+104:probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3710393Z make[2]: *** [/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/scripts/Makefile.build:503: mm] Error 2
+106:probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3711889Z make[1]: *** [/home/runner/work/GKI_KernelSU_SUSFS/GKI_KernelSU_SUSFS/kernel/common/Makefile:2068: .] Error 2
+107:probe	构建 Image（自动补齐 module_outs 并重试）	2026-09-26T21:31:24.3712582Z make: *** [Makefile:256: __sub-make] Error 2
