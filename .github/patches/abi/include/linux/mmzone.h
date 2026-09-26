@@ -79,6 +79,9 @@ enum migratetype {
 	MIGRATE_PCPTYPES, /* the number of types on the pcp lists */
 	MIGRATE_HIGHATOMIC = MIGRATE_PCPTYPES,
 #ifdef CONFIG_MEMORY_ISOLATION
+	MIGRATE_UNMOVABLE_ISOLATE_SORD,
+	MIGRATE_UNMOVABLE_ISOLATE_BORD,
+	MIGRATE_THP_POOL,
 	MIGRATE_ISOLATE,	/* can't allocate from here */
 #endif
 	MIGRATE_TYPES
@@ -166,12 +169,17 @@ enum zone_stat_item {
 	NR_ZONE_INACTIVE_FILE,
 	NR_ZONE_ACTIVE_FILE,
 	NR_ZONE_UNEVICTABLE,
+	NR_ZONE_VITAL,
+	NR_ZONE_STAPLE,
 	NR_ZONE_WRITE_PENDING,	/* Count of dirty, writeback and unstable pages */
 	NR_MLOCK,		/* mlock()ed pages found and moved off LRU */
 	/* Second 128 byte cacheline */
 	NR_BOUNCE,
 	NR_ZSPAGES,		/* allocated in zsmalloc */
 	NR_FREE_CMA_PAGES,
+	NR_FREE_UNMOVABLE_ISOLATE_SORD,
+	NR_FREE_UNMOVABLE_ISOLATE_BORD,
+	NR_FREE_THP_POOL_PAGES,
 	NR_VM_ZONE_STAT_ITEMS };
 
 enum node_stat_item {
@@ -181,6 +189,8 @@ enum node_stat_item {
 	NR_INACTIVE_FILE,	/*  "     "     "   "       "         */
 	NR_ACTIVE_FILE,		/*  "     "     "   "       "         */
 	NR_UNEVICTABLE,		/*  "     "     "   "       "         */
+	NR_VITAL,
+	NR_STAPLE,
 	NR_SLAB_RECLAIMABLE_B,
 	NR_SLAB_UNRECLAIMABLE_B,
 	NR_ISOLATED_ANON,	/* Temporary isolated pages from anon lru */
@@ -289,6 +299,8 @@ enum lru_list {
 	LRU_INACTIVE_FILE = LRU_BASE + LRU_FILE,
 	LRU_ACTIVE_FILE = LRU_BASE + LRU_FILE + LRU_ACTIVE,
 	LRU_UNEVICTABLE,
+	LRU_VITAL,
+	LRU_STAPLE,
 	NR_LRU_LISTS
 };
 
@@ -1006,7 +1018,6 @@ struct zone {
 	ANDROID_KABI_RESERVE(2);
 	ANDROID_KABI_RESERVE(3);
 	ANDROID_KABI_RESERVE(4);
-	ANDROID_OEM_DATA_ARRAY(1, 2);
 } ____cacheline_internodealigned_in_smp;
 
 enum pgdat_flags {
