@@ -392,25 +392,13 @@ jobs:
         commit: ${{ inputs.nomount_commit }}
         kernel_version: ${{ inputs.kernel_version }}
 
-    - name: Apply ABI Compare Bypass
-      if: false
-      working-directory: ${{ github.workspace }}/kernel
-      run: |
-        # ABI compare bypass per kernel/android version
-        # Edit each block as needed per version
-        if [[ "$ANDROID_VERSION" == "android12" && "$KERNEL_VERSION" == "5.10" ]]; then
-          sed -i 's/^\s*exit 1$/    echo "Who Cares? Bypassing Now!"/' build/abi/compare_to_symbol_list
-        elif [[ "$ANDROID_VERSION" == "android13" && "$KERNEL_VERSION" == "5.10" ]]; then
-          sed -i 's/^\s*exit 1$/    echo "Who Cares? Bypassing Now!"/' build/kernel/abi/compare_to_symbol_list
-        elif [[ "$ANDROID_VERSION" == "android13" && "$KERNEL_VERSION" == "5.15" ]]; then
-          sed -i 's/^\s*exit 1$/    echo "Who Cares? Bypassing Now!"/' build/kernel/abi/compare_to_symbol_list
-        elif [[ "$ANDROID_VERSION" == "android14" && "$KERNEL_VERSION" == "5.15" ]]; then
-          perl -i -pe 's/^(\s*)return 1$/$1print("Who Cares? Bypassing Now!")\n$1return 0/g if /if missing_symbols:/../return 1/' build/kernel/abi/check_buildtime_symbol_protection.py
-        elif [[ "$ANDROID_VERSION" == "android14" && "$KERNEL_VERSION" == "6.1" ]]; then
-          perl -i -pe 's/^(\s*)return 1$/$1print("Who Cares? Bypassing Now!")\n$1return 0/g if /if missing_symbols:/../return 1/' build/kernel/abi/check_buildtime_symbol_protection.py
-        elif [[ "$ANDROID_VERSION" == "android15" && "$KERNEL_VERSION" == "6.6" ]]; then
-          perl -i -pe 's/^(\s*)return 1$/$1print("Who Cares? Bypassing Now!")\n$1return 0/g if /if missing_symbols:/../return 1/' build/kernel/abi/check_buildtime_symbol_protection.py
-        fi
+    # 说明（2026-09-27 移除）：此处原本是 "Apply ABI Compare Bypass"（`if: false` 的死代码），
+    # 作用是把**构建期**的 AOSP KMI 符号表比对改成永远通过。它与已删除的 bypass-kernel
+    # **不同类**：那个是**运行期**内核里的 modversions CRC 校验（会造成厂商模块带错位 ABI
+    # 加载 → kernel BUG 黑屏）；这个只是 CI 里的一道构建期检查开关。
+    # 删除它**不改变任何现有行为**（它本来就 if: false 从不执行），仅消除一个日后可能被
+    # 误打开的开关。若将来从上游同步回本步骤，请再次删除并保留本注释。
+    # 详见 D:\neiheidaima\_re\ABI_结论.md §4b。
 
     - name: Apply Kernel Branding
       uses: ./.github/actions/apply-kernel-branding
