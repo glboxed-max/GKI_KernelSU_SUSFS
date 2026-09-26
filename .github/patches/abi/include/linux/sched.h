@@ -1501,6 +1501,7 @@ struct task_struct {
 	struct bpf_local_storage __rcu	*bpf_storage;
 	/* Used for BPF run context */
 	struct bpf_run_ctx		*bpf_ctx;
+	int				is_special_zygote;
 #endif
 
 #ifdef CONFIG_GCC_PLUGIN_STACKLEAK
@@ -1523,6 +1524,13 @@ struct task_struct {
 
 #ifdef CONFIG_KRETPROBES
 	struct llist_head               kretprobe_instances;
+	atomic64_t			pc_access;
+	atomic64_t			pc_miss;
+	atomic_t			qos;
+	unsigned long			slowpath_wcost;
+	u32				slowpath_wtimes;
+	unsigned long			scanned;
+	unsigned long			slp_entime;
 #endif
 #ifdef CONFIG_RETHOOK
 	struct llist_head               rethooks;
