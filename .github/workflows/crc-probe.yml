@@ -60,6 +60,14 @@ jobs:
              "$GITHUB_WORKSPACE/kernel/common/arch/arm64/configs/gki_defconfig"
           echo "配置行数: $(grep -c . "$GITHUB_WORKSPACE/kernel/common/arch/arm64/configs/gki_defconfig")"
 
+      - name: 关掉 WERROR（-Warray-bounds 会误伤，且不影响 ABI）
+        run: |
+          set -euo pipefail
+          D="$GITHUB_WORKSPACE/kernel/common/arch/arm64/configs/gki_defconfig"
+          sed -i 's/^CONFIG_WERROR=y/# CONFIG_WERROR is not set/' "$D"
+          grep -q '^\(# \)\?CONFIG_WERROR' "$D" || echo '# CONFIG_WERROR is not set' >> "$D"
+          grep -n 'CONFIG_WERROR' "$D"
+
       - name: 应用 BTF 反推的 ABI 补丁
         if: inputs.use_abi_patches
         run: |
