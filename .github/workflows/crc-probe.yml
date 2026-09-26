@@ -1,0 +1,79 @@
+name: CRC Probe (原厂 config ABI 对齐验证)
+
+# 目的：用「厂商设备的 /proc/config.gz」去编 AOSP 6.1.145 树，
+#       产出 Image 后本地解析 __ksymtab/__kcrctab，与厂商模块的 __versions 逐项对比。
+#       只要 CRC 对齐，就说明 ABI 可以复现 —— 全程无需刷机。
+
+on:
+  workflow_dispatch:
+    inputs:
+      os_patch_level:
+        description: 'OS patch level（对应设备内核 6.1.145）'
+        required: true
+        default: '2025-09'
+      use_device_defconfig:
+        description: '用 .github/config/vivo_pd2339_a16_defconfig 覆盖 gki_defconfig'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 释放磁盘空间
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android/sdk /usr/local/share/boost \
+                      /opt/hostedtoolcache/CodeQL "$AGENT_TOOLSDIRECTORY" 2>/dev/null || true
+          df -h /
+
+      - name: 安装 repo 工具 + 准备目录
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/git-repo" "$GITHUB_WORKSPACE/kernel" "$GITHUB_WORKSPACE/AnyKernel3"
+          curl -sSL https://storage.googleapis.com/git-repo-downloads/repo -o "$GITHUB_WORKSPACE/git-repo/repo"
+          chmod +x "$GITHUB_WORKSPACE/git-repo/repo"
+          echo "$GITHUB_WORKSPACE/git-repo" >> "$GITHUB_PATH"
+
+      - name: 同步 AOSP 内核源码（android14-6.1 / 2025-09 = 6.1.145）
+        uses: ./.github/actions/download-kernel
+        with:
+          android_version: android14
+          kernel_version: '6.1'
+          version: android14-6.1
+          os_patch_level: ${{ inputs.os_patch_level }}
+
+      - name: 用原厂 config 覆盖 gki_defconfig
+        if: inputs.use_device_defconfig
+        run: |
+          set -euo pipefail
+          SRC="$GITHUB_WORKSPACE/.github/config/vivo_pd2339_a16_defconfig"
+          DST="$GITHUB_WORKSPACE/kernel/common/arch/arm64/configs/gki_defconfig"
+          cp "$SRC" "$DST"
+          echo "已覆盖，前 5 行："
+          head -5 "$DST"
+          echo "配置行数: $(grep -c . "$DST")"
+
+      - name: 构建 Image
+        uses: ./.github/actions/build-kernel
+        with:
+          version: android14-6.1
+
+      - name: 校验构建产物存在
+        run: |
+          set -euo pipefail
+          ls -l "$GITHUB_WORKSPACE/AnyKernel3/Image"
+          strings "$GITHUB_WORKSPACE/AnyKernel3/Image" | grep -m1 "SMP preempt mod_unload" || true
+
+      - name: 上传 Image
+        uses: actions/upload-artifact@v4
+        with:
+          name: crc-probe-Image
+          path: ${{ github.workspace }}/AnyKernel3/Image
+          if-no-files-found: error
+          compression-level: 0
