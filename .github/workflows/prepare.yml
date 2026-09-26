@@ -56,6 +56,11 @@ on:
         required: false
         type: string
         default: Wild
+      abi_patches:
+        description: "应用 .github/patches/abi（按原厂 BTF 回填结构体字段）"
+        required: false
+        type: boolean
+        default: false
       bypass:
         description: "Apply the kernel version-check bypass hack (disabled by default)"
         required: false
@@ -181,6 +186,7 @@ jobs:
       anykernel3_commit: ${{ inputs.anykernel3_commit }}
       droidspaces_commit: ${{ inputs.droidspaces_commit }}
       brand_name: ${{ inputs.brand_name }}
+      abi_patches: ${{ inputs.abi_patches }}
       bypass: ${{ inputs.bypass }}
       use_cache: ${{ inputs.use_cache }}
     secrets: inherit
