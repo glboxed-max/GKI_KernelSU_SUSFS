@@ -549,11 +549,7 @@ struct vm_area_struct {
 #endif
 	struct vm_userfaultfd_ctx vm_userfaultfd_ctx;
 
-	union {
-		unsigned int in_fork_dup;
-		struct {
-			u64 android_kabi_reserved1;
-		};
+	ANDROID_KABI_USE(1, unsigned int in_fork_dup);
 		union {
 		};
 	};
