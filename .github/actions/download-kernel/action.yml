@@ -70,7 +70,18 @@ runs:
               echo "WARNING: no head or tag found for ${FORMATTED_BRANCH}; sync will likely fail." >&2
             fi
           fi
+
+          # 有些月份 AOSP 的 manifest 直接把 common 钉成 `_rNN` 发布 tag（而不是分支）。
+          # 这种情况下 refs/heads/<rev> 不存在，必须允许按 tag 拉取；否则 repo 会 fetch
+          # refs/heads/androidXX-YY-YYYY-MM_rNN 并报 "couldn't find remote ref"。
+          MANIFEST_TAG=""
+          MANIFEST_COMMON_REV="$(grep -E 'path="common"' "$DEFAULT_MANIFEST_PATH" 2>/dev/null | grep -oE 'revision="[^"]+"' | head -n1 | cut -d'"' -f2 || true)"
+          if [[ "$MANIFEST_COMMON_REV" =~ _r[0-9]+$ ]]; then
+            MANIFEST_TAG="$MANIFEST_COMMON_REV"
+            echo "[!] manifest pins common to release tag '${MANIFEST_TAG}'; 将允许 tag 拉取。"
+          fi
           echo "tag_fallback=$TAG_FALLBACK" >> $GITHUB_OUTPUT
+          echo "manifest_tag=$MANIFEST_TAG" >> $GITHUB_OUTPUT
         }
 
         MAX_RETRIES=3
@@ -97,11 +108,13 @@ runs:
           echo "Attempt $attempt/$MAX_RETRIES: initialize and sync kernel repository (depth=${CURRENT_DEPTH}, sync timeout $SYNC_TIMEOUT)..."
           df -h "$PWD" | tail -n +2 || true
           if init_repo "$CURRENT_DEPTH"; then
-            # Use minimal-shallow variant: current-branch, shallow init done above, reduce files downloaded
-            # Tag revisions are not fetched when --no-tags is set.
-            SYNC_TAG_FLAGS="--no-tags"
-            if [ -n "$TAG_FALLBACK" ]; then SYNC_TAG_FLAGS=""; fi
-            if timeout $SYNC_TIMEOUT repo sync -c --current-branch --no-clone-bundle $SYNC_TAG_FLAGS --jobs-checkout=4 -j4; then
+            # 默认最小浅克隆；若本次需要按 tag 拉取（tag fallback 或 manifest 用 _rNN tag），
+            # 则去掉 -c/--current-branch 与 --no-tags，确保 repo 能取到 tag。
+            SYNC_ARGS=(-c --current-branch --no-clone-bundle --no-tags --jobs-checkout=4 -j4)
+            if [ -n "$TAG_FALLBACK" ] || [ -n "${MANIFEST_TAG:-}" ]; then
+              SYNC_ARGS=(--no-clone-bundle --jobs-checkout=4 -j4)
+            fi
+            if timeout $SYNC_TIMEOUT repo sync "${SYNC_ARGS[@]}"; then
               echo "Kernel repository initialization and sync succeeded on attempt $attempt."
               break
             else
