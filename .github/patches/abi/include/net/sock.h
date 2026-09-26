@@ -553,6 +553,37 @@ struct sock {
 	u64 sk_born_stamp;
 	char sk_process_name[16];
 	char sk_thread_name[16];
+	union {
+		struct {
+			u32		reported_segs_out;
+			u64		reported_byte_out;
+			u32		reported_segs_rtx;
+			u64		reported_byte_rtx;
+			u32		reported_segs_in;
+			u64		reported_byte_in;
+			u32		reported_dup_ack;
+			u32		reported_ooo_seg;
+			u32		qoe_event;
+			long		diaged_last_rtt;
+			unsigned long	diaged_rtx_begintime;
+			u32		diaged_data_segs_out;
+			u32		diaged_data_segs_rtx;
+			unsigned long	diaged_ooo_begintime;
+			u32		data_segs_dup_ack;
+			u32		diaged_data_segs_in;
+			u32		diaged_byte_rcv_nxt;
+		} tcp_qoe_diag;
+		struct {
+			u32		reported_segs_out;
+			u64		reported_byte_out;
+			u32		reported_segs_in;
+			u64		reported_byte_in;
+			u32		data_segs_out;
+			u64		bytes_sent;
+			u32		data_segs_in;
+			u64		bytes_recv;
+		} udp_qoe_diag;
+	};
 
 	ANDROID_OEM_DATA(1);
 	ANDROID_KABI_RESERVE(1);
