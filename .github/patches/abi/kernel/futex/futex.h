@@ -2,6 +2,8 @@
 #ifndef _FUTEX_H
 #define _FUTEX_H
 
+/* 本文件新增使用 ANDROID_OEM_DATA* 宏（交接2 项5/6），需显式包含 */
+#include <linux/android_kabi.h>
 #include <linux/futex.h>
 #include <linux/rtmutex.h>
 #include <linux/sched/wake_q.h>

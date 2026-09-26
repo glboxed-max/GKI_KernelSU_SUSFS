@@ -96,10 +96,21 @@ jobs:
                  //common:kernel_aarch64/Image > /tmp/bazel.log 2>&1; then
               ok=1; break
             fi
-            tail -60 /tmp/bazel.log || true
+            echo "----- 真实 error 行（最多 40 条）-----"
+            grep -n -m 40 -E "error:|Error [0-9]|fatal error|BUILD_BUG_ON|No such file or directory|undeclared|note: expanded from macro|expected" /tmp/bazel.log || true
+            echo "----- tail 40 -----"
+            tail -40 /tmp/bazel.log || true
             python3 "$GITHUB_WORKSPACE/.github/tools/bazel_module_outs.py" /tmp/bazel.log common/BUILD.bazel || break
           done
           [ "$ok" = "1" ] || { echo "构建失败"; exit 1; }
+
+      - name: 失败时上传 bazel 日志（供无 token 的协作者取用）
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bazel-log
+          path: /tmp/bazel.log
+          if-no-files-found: ignore
 
       - name: 收集产物
         working-directory: ${{ github.workspace }}/kernel
