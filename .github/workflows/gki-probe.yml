@@ -1,0 +1,117 @@
+name: GKI Stock Probe (原厂 gki_defconfig 基线)
+
+# 目的：用「厂商设备的 /proc/config.gz」去编 AOSP 6.1.145 树（可叠加 BTF 反推的头文件补丁），
+#       产出 Image 后本地解析 __ksymtab/__kcrctab + BTF，与厂商模块逐项对比。
+#       全程无需刷机。
+
+on:
+  workflow_dispatch:
+  # 只在改动本文件时自动跑一炉
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/gki-probe.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 释放磁盘空间
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android/sdk /usr/local/share/boost \
+                      /opt/hostedtoolcache/CodeQL "$AGENT_TOOLSDIRECTORY" 2>/dev/null || true
+          df -h /
+
+      - name: 安装 repo 工具 + 准备目录
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/git-repo" "$GITHUB_WORKSPACE/kernel" "$GITHUB_WORKSPACE/AnyKernel3"
+          curl -sSL https://storage.googleapis.com/git-repo-downloads/repo -o "$GITHUB_WORKSPACE/git-repo/repo"
+          chmod +x "$GITHUB_WORKSPACE/git-repo/repo"
+          echo "$GITHUB_WORKSPACE/git-repo" >> "$GITHUB_PATH"
+
+      - name: 同步 AOSP 内核源码（android14-6.1 / 2025-09 = 6.1.145）
+        uses: ./.github/actions/download-kernel
+        with:
+          android_version: android14
+          kernel_version: '6.1'
+          version: android14-6.1
+          os_patch_level: ${{ inputs.os_patch_level || '2025-09' }}
+
+      - name: 关掉 WERROR（-Warray-bounds 会误伤，且不影响 ABI）
+        run: |
+          set -euo pipefail
+          D="$GITHUB_WORKSPACE/kernel/common/arch/arm64/configs/gki_defconfig"
+          sed -i 's/^CONFIG_WERROR=y/# CONFIG_WERROR is not set/' "$D"
+          grep -q '^\(# \)\?CONFIG_WERROR' "$D" || echo '# CONFIG_WERROR is not set' >> "$D"
+          grep -n 'CONFIG_WERROR' "$D"
+
+      - name: 构建 Image（自动补齐 module_outs 并重试）
+        working-directory: ${{ github.workspace }}/kernel
+        run: |
+          set -uo pipefail
+          sed -i 's/check_defconfig//' ./common/build.config.gki
+          sed -i '/name = "kernel_aarch64",/a\    check_defconfig = "disabled",' common/BUILD.bazel
+          ok=0
+          for i in 1 2 3 4; do
+            echo "===== Bazel 构建 第 $i 次 ====="
+            if tools/bazel build --config=fast --disk_cache=/home/runner/.cache/bazel \
+                 //common:kernel_aarch64/Image > /tmp/bazel.log 2>&1; then
+              ok=1; break
+            fi
+            echo "----- 真实 error 行（最多 40 条）-----"
+            grep -n -m 40 -E "error:|Error [0-9]|fatal error|BUILD_BUG_ON|No such file or directory|undeclared|note: expanded from macro|expected" /tmp/bazel.log || true
+            echo "----- tail 40 -----"
+            tail -40 /tmp/bazel.log || true
+            python3 "$GITHUB_WORKSPACE/.github/tools/bazel_module_outs.py" /tmp/bazel.log common/BUILD.bazel || break
+          done
+          [ "$ok" = "1" ] || { echo "构建失败"; exit 1; }
+
+      - name: 失败时上传 bazel 日志（供无 token 的协作者取用）
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bazel-log
+          path: /tmp/bazel.log
+          if-no-files-found: ignore
+
+      - name: 收集产物
+        working-directory: ${{ github.workspace }}/kernel
+        run: |
+          set -euo pipefail
+          IMG=""
+          for c in bazel-bin/common/kernel_aarch64/Image common/bazel-bin/common/kernel_aarch64/Image; do
+            [ -f "$c" ] && IMG="$c" && break
+          done
+          [ -n "$IMG" ] || { echo "找不到 Image"; find . -name Image -path '*kernel_aarch64*' | head; exit 1; }
+          cp "$IMG" "$GITHUB_WORKSPACE/AnyKernel3/Image"
+          ls -l "$GITHUB_WORKSPACE/AnyKernel3/Image"
+          strings "$GITHUB_WORKSPACE/AnyKernel3/Image" | grep -m1 "SMP preempt mod_unload" || true
+
+      - name: 上传 Image
+        uses: actions/upload-artifact@v4
+        with:
+          name: gki-Image
+          path: ${{ github.workspace }}/AnyKernel3/Image
+          if-no-files-found: error
+          compression-level: 0
+
+      - name: 把 Image 挂到公开 Release（便于无 token 获取）
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -u
+          # GKI 原厂 config tag 前缀，与 crc-probe / baseline 互不覆盖。
+          TAG="gki-${GITHUB_SHA:0:8}"
+          gh release view "$TAG" >/dev/null 2>&1 && gh release delete "$TAG" --yes --cleanup-tag || true
+          gh release create "$TAG" \
+            --title "GKI Stock ${GITHUB_SHA:0:8}" \
+            --notes "自动发布：原厂 gki_defconfig（不套设备 config、不打补丁）产物 Image（commit ${GITHUB_SHA}）。Release asset 公开，可直接下载。" \
+            "$GITHUB_WORKSPACE/AnyKernel3/Image" \
+          && echo "已发布 Release $TAG" || echo "Release 发布失败（忽略，不影响后续）"
