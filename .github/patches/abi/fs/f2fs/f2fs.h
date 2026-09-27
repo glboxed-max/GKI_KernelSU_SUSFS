@@ -420,12 +420,17 @@ struct discard_cmd_control {
 	unsigned int max_ordered_discard;	/* maximum discard granularity issued by lba order */
 	unsigned int undiscard_blks;		/* # of undiscard blocks */
 	unsigned int next_pos;			/* next discard position */
+	spinlock_t discard_time_lock;		/* lock for discard time stats */
+	ktime_t discard_time_avg;		/* average discard time */
 	atomic_t issued_discard;		/* # of issued discard */
 	atomic_t queued_discard;		/* # of queued discard */
 	atomic_t discard_cmd_cnt;		/* # of cached cmd count */
 	struct rb_root_cached root;		/* root of discard rb-tree */
 	bool rbtree_check;			/* config for consistence check */
 	bool discard_wake;			/* to wake up discard thread */
+	unsigned int force_discard_type;	/* force discard type */
+	unsigned int discard_thread_log_ms;	/* discard thread log interval (ms) */
+	bool discard_thread_issue;		/* whether discard thread issues */
 };
 
 /* for the list of fsync inodes, used only during recovery */
