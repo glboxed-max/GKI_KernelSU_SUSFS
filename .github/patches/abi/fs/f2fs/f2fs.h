@@ -372,6 +372,10 @@ struct discard_cmd {
 	int error;			/* bio error */
 	spinlock_t lock;		/* for state/bio_ref updating */
 	unsigned short bio_ref;		/* bio reference count */
+	struct discard_cmd_control *dcc;	/* discard cmd manager */
+	ktime_t submit_start;		/* when the discard cmd was submitted */
+	u64 submit_time;		/* time cost of the discard cmd */
+	struct f2fs_sb_info *sbi;	/* for discard stats */
 };
 
 enum {
