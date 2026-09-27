@@ -1,8 +1,21 @@
-# 运行概况快照 2026-09-27T13:51:17Z
+# 运行概况快照 2026-09-27T17:57:42Z
 
 ```
-36323833609  DSH Fetch Failed Build Log  in_progress/null  ab2387de  2026-09-27T13:51:12Z
-36323812790  CRC Probe (原厂 config ABI 对齐验证)  in_progress/null  ab2387de  2026-09-27T13:50:50Z
+36338856025  DSH Fetch Failed Build Log  in_progress/null  5c417d79  2026-09-27T17:57:37Z
+36329839147  Validate  completed/success  5c417d79  2026-09-27T15:31:01Z
+36329839107  CRC Probe (原厂 config ABI 对齐验证)  completed/success  5c417d79  2026-09-27T15:31:01Z
+36327026403  CRC Probe (原厂 config ABI 对齐验证)  completed/failure  cf000090  2026-09-27T14:44:44Z
+36327026331  Validate  completed/success  cf000090  2026-09-27T14:44:44Z
+36326661965  Validate  completed/success  dc8606bc  2026-09-27T14:38:49Z
+36326661943  CRC Probe (原厂 config ABI 对齐验证)  completed/failure  dc8606bc  2026-09-27T14:38:49Z
+36326064095  CRC Probe (原厂 config ABI 对齐验证)  completed/failure  6f11dac8  2026-09-27T14:28:53Z
+36326064059  Validate  completed/success  6f11dac8  2026-09-27T14:28:53Z
+36325973273  CRC Probe (原厂 config ABI 对齐验证)  completed/failure  56cf4f28  2026-09-27T14:27:21Z
+36325973252  Validate  completed/success  56cf4f28  2026-09-27T14:27:21Z
+36324087870  Validate  completed/success  d1d84af0  2026-09-27T13:55:37Z
+36324087814  CRC Probe (原厂 config ABI 对齐验证)  completed/failure  d1d84af0  2026-09-27T13:55:37Z
+36323833609  DSH Fetch Failed Build Log  completed/success  ab2387de  2026-09-27T13:51:12Z
+36323812790  CRC Probe (原厂 config ABI 对齐验证)  completed/success  ab2387de  2026-09-27T13:50:50Z
 36323812764  Validate  completed/success  ab2387de  2026-09-27T13:50:50Z
 36321135015  GKI Stock Probe (原厂 gki_defconfig 基线)  completed/success  a003870b  2026-09-27T13:04:30Z
 36321134977  Validate  completed/success  a003870b  2026-09-27T13:04:30Z
@@ -13,17 +26,4 @@
 36305020647  DSH Fetch Failed Build Log  completed/success  64557d76  2026-09-27T08:03:50Z
 36299016375  Sync Kernel Matrix  completed/failure  64557d76  2026-09-27T06:04:15Z
 36287712223  DSH Fetch Failed Build Log  completed/success  8030b220  2026-09-27T02:10:00Z
-36280915111  DSH Fetch Failed Build Log  completed/success  4195a579  2026-09-26T23:55:14Z
-36278613358  Validate  completed/success  4195a579  2026-09-26T23:10:37Z
-36278613280  CRC Probe (原厂 config ABI 对齐验证)  completed/failure  4195a579  2026-09-26T23:10:37Z
-36277354190  Baseline Probe (无 ABI 补丁基线)  completed/cancelled  30b9c61a  2026-09-26T22:46:28Z
-36277354186  CRC Probe (原厂 config ABI 对齐验证)  completed/success  30b9c61a  2026-09-26T22:46:28Z
-36277354138  Validate  completed/success  30b9c61a  2026-09-26T22:46:28Z
-36276111881  CRC Probe (原厂 config ABI 对齐验证)  completed/success  d6a0a709  2026-09-26T22:23:24Z
-36273694683  DSH Fetch Failed Build Log  completed/success  e3452f3e  2026-09-26T21:39:40Z
-36273694601  Validate  completed/success  e3452f3e  2026-09-26T21:39:40Z
-36273521051  DSH Fetch Failed Build Log  completed/success  6ab0cf77  2026-09-26T21:36:31Z
-36273520918  Validate  completed/success  6ab0cf77  2026-09-26T21:36:31Z
-36273459203  Validate  completed/success  8f43ad80  2026-09-26T21:35:26Z
-36273297522  CRC Probe (原厂 config ABI 对齐验证)  completed/success  a5322cf0  2026-09-26T21:32:38Z
 ```
