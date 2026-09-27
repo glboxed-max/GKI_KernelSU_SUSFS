@@ -1,7 +1,9 @@
-# 运行概况快照 2026-09-27T02:10:05Z
+# 运行概况快照 2026-09-27T08:03:57Z
 
 ```
-36287712223  DSH Fetch Failed Build Log  in_progress/null  8030b220  2026-09-27T02:10:00Z
+36305020647  DSH Fetch Failed Build Log  in_progress/null  64557d76  2026-09-27T08:03:50Z
+36299016375  Sync Kernel Matrix  completed/failure  64557d76  2026-09-27T06:04:15Z
+36287712223  DSH Fetch Failed Build Log  completed/success  8030b220  2026-09-27T02:10:00Z
 36280915111  DSH Fetch Failed Build Log  completed/success  4195a579  2026-09-26T23:55:14Z
 36278613358  Validate  completed/success  4195a579  2026-09-26T23:10:37Z
 36278613280  CRC Probe (原厂 config ABI 对齐验证)  completed/failure  4195a579  2026-09-26T23:10:37Z
@@ -24,6 +26,4 @@
 36271824979  Validate  completed/success  72923036  2026-09-26T21:07:03Z
 36271787873  CRC Probe (原厂 config ABI 对齐验证)  completed/failure  37dd2d1e  2026-09-26T21:06:23Z
 36271767140  Validate  completed/success  37dd2d1e  2026-09-26T21:06:02Z
-36271579326  Validate  completed/success  f4ca36af  2026-09-26T21:02:46Z
-36271444047  CRC Probe (原厂 config ABI 对齐验证)  completed/cancelled  a67bc7a5  2026-09-26T21:00:30Z
 ```
