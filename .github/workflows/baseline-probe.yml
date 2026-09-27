@@ -115,7 +115,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -u
-          TAG="crc-probe-${GITHUB_SHA:0:8}"
+          # 基线专用 tag 前缀：与 crc-probe 的产物互不覆盖，两炉可同时对比。
+          TAG="baseline-${GITHUB_SHA:0:8}"
           gh release view "$TAG" >/dev/null 2>&1 && gh release delete "$TAG" --yes --cleanup-tag || true
           gh release create "$TAG" \
             --title "Baseline ${GITHUB_SHA:0:8}" \
