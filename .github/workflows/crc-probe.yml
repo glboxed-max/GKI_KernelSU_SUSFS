@@ -153,6 +153,29 @@ jobs:
           echo "=== bazel 配置串（看 lto=...;trim 是否存在）==="
           grep -m 3 -E 'Building kernel \(' /tmp/bazel.log 2>/dev/null || echo "  （日志中未出现）"
 
+      - name: 定位 Kleaf 里开启 TRIM_UNUSED_KSYMS 的规则（只打印，不改）
+        if: always()
+        working-directory: ${{ github.workspace }}
+        run: |
+          set -uo pipefail
+          echo "===== 搜索 Kleaf 中与 KMI 裁剪相关的规则 ====="
+          echo "--- 候选目录 ---"
+          for d in kernel/build build/kernel/kleaf kernel/common/kleaf .; do
+            [ -d "$d" ] && echo "  存在: $d"
+          done
+          echo "--- 含 TRIM_UNUSED_KSYMS / UNUSED_KSYMS_WHITELIST 的文件 ---"
+          grep -rln -E 'TRIM_UNUSED_KSYMS|UNUSED_KSYMS_WHITELIST' \
+            --include='*.bzl' --include='*.bazel' --include='*.py' --include='*.sh' \
+            kernel/build build/kernel/kleaf 2>/dev/null | head -20 || echo "  （未找到）"
+          echo "--- 命中行（最多 40 条）---"
+          grep -rn -E 'TRIM_UNUSED_KSYMS|UNUSED_KSYMS_WHITELIST|unused_ksyms_whitelist|abi_symbollist' \
+            --include='*.bzl' --include='*.bazel' --include='*.py' --include='*.sh' \
+            kernel/build build/kernel/kleaf 2>/dev/null | head -40 || echo "  （未找到）"
+          echo "--- kernel_build 规则里与 kmi 相关的属性 ---"
+          grep -rn -E '"kmi_symbol_list"|kmi_symbol_list_strict_mode|trim_nonlisted_kmi|unused_ksyms' \
+            --include='*.bzl' --include='*.bazel' \
+            kernel/build build/kernel/kleaf 2>/dev/null | head -25 || echo "  （未找到）"
+
       - name: 失败时上传 bazel 日志（供无 token 的协作者取用）
         if: failure()
         uses: actions/upload-artifact@v4
