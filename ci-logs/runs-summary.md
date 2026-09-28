@@ -1,7 +1,8 @@
-# 运行概况快照 2026-09-27T23:25:00Z
+# 运行概况快照 2026-09-28T01:47:33Z
 
 ```
-36358609416  DSH Fetch Failed Build Log  in_progress/null  97f770d1  2026-09-27T23:24:55Z
+36367328463  DSH Fetch Failed Build Log  in_progress/null  cb4b8fb7  2026-09-28T01:47:27Z
+36358609416  DSH Fetch Failed Build Log  completed/success  97f770d1  2026-09-27T23:24:55Z
 36349052577  DSH Fetch Failed Build Log  completed/success  c9135912  2026-09-27T20:42:57Z
 36338856025  DSH Fetch Failed Build Log  completed/success  5c417d79  2026-09-27T17:57:37Z
 36329839147  Validate  completed/success  5c417d79  2026-09-27T15:31:01Z
@@ -25,5 +26,4 @@
 36320902168  Baseline Probe (无 ABI 补丁基线)  completed/success  53f1ea47  2026-09-27T13:00:32Z
 36319449923  Validate  completed/success  e1d1b4b6  2026-09-27T12:34:40Z
 36319449909  CRC Probe (原厂 config ABI 对齐验证)  completed/success  e1d1b4b6  2026-09-27T12:34:40Z
-36305020647  DSH Fetch Failed Build Log  completed/success  64557d76  2026-09-27T08:03:50Z
 ```
