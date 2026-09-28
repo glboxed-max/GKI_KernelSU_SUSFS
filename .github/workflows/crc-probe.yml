@@ -98,17 +98,12 @@ jobs:
           set -uo pipefail
           sed -i 's/check_defconfig//' ./common/build.config.gki
           sed -i '/name = "kernel_aarch64",/a\    check_defconfig = "disabled",' common/BUILD.bazel
-          # 关掉 KMI 符号表裁剪：Kleaf 依据 kmi_symbol_list 生成 abi_symbollist.raw，并自动开启
-          # CONFIG_TRIM_UNUSED_KSYMS=y + CONFIG_UNUSED_KSYMS_WHITELIST="abi_symbollist.raw"，
-          # 只导出清单内符号（实测 8274 个）。原厂内核完全不裁剪（两项都没设），导出 15532 个。
-          # 为对齐原厂形态，去掉 kmi_symbol_list / additional_kmi_symbol_lists / protected_exports_list。
-          echo "===== 关闭 KMI 裁剪（对齐原厂不裁剪形态）====="
-          grep -n -E '"kmi_symbol_list"|"protected_exports_list"|"additional_kmi_symbol_lists"' common/BUILD.bazel || true
-          sed -i -E '/^[[:space:]]*"kmi_symbol_list":/d' common/BUILD.bazel
-          sed -i -E '/^[[:space:]]*"additional_kmi_symbol_lists":/d' common/BUILD.bazel
-          sed -i -E '/^[[:space:]]*"protected_exports_list":/d' common/BUILD.bazel
-          echo "----- 处理后 -----"
-          grep -n -E '"kmi_symbol_list"|"protected_exports_list"|"additional_kmi_symbol_lists"' common/BUILD.bazel || echo "（已全部移除）"
+          # 说明：曾尝试在此处 sed 删除 kmi_symbol_list / protected_exports_list 以关掉裁剪，
+          # 但 Kleaf 的 //common:kernel_aarch64_raw_kmi_symbol_list 目标依赖该属性，
+          # 删除后构建在 "Creating abi_symbollist.raw" 阶段失败（Exit 1）。
+          # 正确做法是改"是否裁剪"这个开关，而不是删清单 —— 见 INVESTIGATION_STATE.md §12-A。
+          echo "===== KMI 裁剪现状（仅供观察，不做修改）====="
+          grep -n -E '"kmi_symbol_list"|"protected_exports_list"|"additional_kmi_symbol_lists"' common/BUILD.bazel || echo "（未找到，可能构建链不同）"
           ok=0
           for i in 1 2 3 4; do
             echo "===== Bazel 构建 第 $i 次 ====="
