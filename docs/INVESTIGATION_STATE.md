@@ -151,69 +151,107 @@ SukiSU 产物  : 6.1.145-android14-11-maybe-dirty SMP preempt mod_unload modvers
 
 ## 5. 待求证的问题（按优先级）
 
-### ★ P1【已确证根因】KMI 符号表裁剪 —— 就是 CRC 分歧的根源
+### ✔ P1【已结案·负结果】KMI 符号表裁剪 —— 查清了，但**不是** CRC 分歧的原因
+
+**症状**：原厂导出 15,532 个符号，我们只有 8,274；Image 差 4.9 MB。
 
 **证据（从两边内核内嵌的 `.config` 直接抠出，不需等构建）**：
 
 ```
-                        我们的构建              原厂（手机上跑的）
-CONFIG_TRIM_UNUSED_KSYMS     =y              # ... is not set      ← ★ 关键差异
-CONFIG_UNUSED_KSYMS_WHITELIST="abi_symbollist.raw"  (未出现)        ← ★ 关键差异
+                        我们的构建（裁剪版）    原厂（手机上跑的）
+CONFIG_TRIM_UNUSED_KSYMS     =y              # ... is not set
+CONFIG_UNUSED_KSYMS_WHITELIST="abi_symbollist.raw"  (未出现)
 配置项总数                2189 / 2237        3031
-=y                      2002 / 2063        2225
-=m（模块数）                75 / 62           665                  ← 差 10 倍
-配置行数                 7684 / 7646        9246
-导出符号数                8274               15532
-Image 大小               37.4 MB            42.4 MB
+=m（模块数）                75 / 62           665
 ```
 
 **机制（在 AOSP 的 `BUILD.bazel` 里找到）**：
 
 ```
-BUILD.bazel:141   "kmi_symbol_list_strict_mode": True,
 BUILD.bazel:143   "kmi_symbol_list": "android/abi_gki_aarch64",
 BUILD.bazel:146   "additional_kmi_symbol_lists": [":aarch64_additional_kmi_symbol_lists"],
 BUILD.bazel:147   "protected_exports_list": "android/abi_gki_protected_exports_aarch64",
 ```
 
-⇒ **Kleaf 依据 `kmi_symbol_list` 生成 `abi_symbollist.raw`，并据此自动开启
-`CONFIG_TRIM_UNUSED_KSYMS=y` + `CONFIG_UNUSED_KSYMS_WHITELIST="abi_symbollist.raw"`**，
-把导出裁剪到清单内的 **8,274** 个；**而原厂内核两项都没设、导出 15,532 个**。
+⇒ Kleaf 依据 `kmi_symbol_list` 生成 `abi_symbollist.raw`，据此开启
+`TRIM_UNUSED_KSYMS=y` + 白名单，把导出裁到 8,274 个。
 
-**⇒ 这解释了为什么「配置逐字节相同」却差这么多**：设备 defconfig 里写的是
-`# CONFIG_TRIM_UNUSED_KSYMS is not set`，**被构建链覆盖了** —— 之前只查配置文件，
-没查构建目标属性，所以一直找不到。
+**正确开关（在 Kleaf 源码 `kernel/build` 里找到，浅克隆于 `D:\neiheidaima\kleaf_src`）**：
 
-**为什么它可能就是 CRC 之谜的答案**：`module_layout` 的类型闭包里包含
-`struct kernel_symbol` 与整个导出机制；「不裁剪 15532」vs「被裁到 8274」
-是这个量级上唯一的差别，也是唯一还能解释「对齐 150 处源码却完全不动 CRC」的可能。
+```
+kleaf/bazelrc/flags.bazelrc:60
+    build --flag_alias=notrim=@kleaf//build/kernel/kleaf/impl:force_disable_trim
+kleaf/impl/abi/abi_transitions.bzl:51-59
+    """notrim: like _with_vmlinux, but trim_nonlisted_kmi = False"""
+    return _with_vmlinx_transition_impl(settings, attr) | { FORCE_DISABLE_TRIM: True }
+kleaf/impl/kernel_build.bzl:1094
+    Label(".../defconfig:notrim_defconfig"): "False"
+```
 
-#### 已尝试且失败的修法（`6c767534`）
+**已实施**：`c38378f7` 给 bazel 命令加 `--notrim` ⇒ 构建串从 `(lto=fast;trim)` 变成 `(lto=fast;notrim)` ✓
 
-直接 `sed` 删除 `BUILD.bazel` 里的 `kmi_symbol_list` / `additional_kmi_symbol_lists` /
-`protected_exports_list` ⇒ **构建失败**：
+**结果（`crc-probe-c38378f7`）**：
 
+```
+导出符号数:  8,274  →  15,361      （原厂 15,532，几乎追平 ✓）
+Image 大小:  37.4 MB → 35.5 MB
+
+但 CRC 一位未变：
+                         裁剪版        不裁剪版       原厂
+module_layout        0x973d4800    0x973d4800    0xe4a1dbce
+kmalloc_caches       0x21f38a09    0x21f38a09    0xb5c66f9d
+wake_up_process      0xc84578e3    0xc84578e3    0x30d402ab
+不符计数             142/7/43/1    142/7/43/1    0
+```
+
+**⇒ 结论：KMI 裁剪不是 CRC 分歧的原因。**（此前"导出机制进闭包"的推理是错的 ——
+genksyms 逐符号对**声明文本**哈希，与最终导出哪些符号无关。）
+
+**但这一炉并非白做**：构建形态现已与原厂一致（导出集合、`=m` 数量都更接近），
+对**模块加载的其他环节**（不只 CRC）是有意义的对齐；
+并且它把「构建形态」这最后一个假设也排除了。
+
+#### 失败的中间尝试（`6c767534`，已回滚 `d9cd1062`）
+
+直接 `sed` 删 `BUILD.bazel` 里的 `kmi_symbol_list` 等属性 ⇒ 构建失败：
 ```
 ERROR: common/BUILD.bazel:139:22: Creating abi_symbollist.raw
        @//common:kernel_aarch64_raw_kmi_symbol_list failed (Exit 1)
 ```
+原因：该属性被 `//common:kernel_aarch64_raw_kmi_symbol_list` 目标依赖。
+**教训：改"行为开关"，不要删"声明"。**
 
-原因：`//common:kernel_aarch64_raw_kmi_symbol_list` 目标**依赖**该属性，删掉后无米下锅。
-已回滚（`d9cd1062`），仓库恢复可构建状态。
+---
 
-#### 正确的修法方向（下一步）
+### ★★ P2【唯一剩下的层次】genksyms 的输入文本 / 工具版本
 
-**要点：改「是否裁剪」这个开关，而不是删清单。**
+**排除进度**：
 
-| 候选 | 说明 | 备注 |
+```
+源码      ✗ 已排除（150 处全对齐、编译通过、CRC 逐位不变）
+配置      ✗ 已排除（设备 config 与内嵌 config 逐字节相同；561 个守卫宏 0 处不一致）
+构建形态  ✗ 刚排除（导出 8.3k → 15.4k，CRC 仍逐位不变）
+工具链    ✗ 已排除（小米 PLK110 厂商模块要求的值 = 我们标准 GKI 的值 0xea759d7f）
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+剩下  ⇒  genksyms 的【输入文本】本身，或 genksyms 自身的版本
+```
+
+**新条件（有利）**：两边导出集合已几乎相同（15,361 vs 15,532），
+所以可以开始做"同一前提下的文本级对比"。
+
+**候选做法**：
+
+| # | 做法 | 说明 |
 |---|---|---|
-| a | 找 Kleaf 的对应开关（`--notrim` / `--trim_unused_ksyms` 之类）或 target 属性 | **Kleaf 不在 `kernel/common` 克隆里，而在 `kernel/build` 仓库** ⇒ 本地 grep 查不到，需在 CI 里读或另克隆 |
-| b | 把 `kmi_symbol_list` 指向**覆盖面更大的清单**（合并 `abi_gki_aarch64` + `abi_gki_aarch64_mtk` + `abi_gki_aarch64_vivo`） | OEM 树里三份都在；但仍是被裁剪的子集，只能逼近 |
-| c | 直接 patch Kleaf 里启用 `TRIM_UNUSED_KSYMS` 的那条规则 | 最彻底，但要找到规则所在 |
-| d | 让 Kleaf 不生成 whitelist（清空 `unused_ksyms_whitelist` 属性） | 需确认属性名 |
+| P2-a | **对比两边符号清单的差集** | 我们 15,361 vs 原厂 15,532 ⇒ 171 个差异，看是否有系统性缺失 |
+| P2-b | **查 genksyms 版本** | 从 `vmlinux`/构建环境取证；厂商可能用了不同版本的 `scripts/genksyms` |
+| P2-c | **dump `module_layout` 的预处理产物** | 对 `struct module` 闭包做 `gcc -E`（带 `-D__GENKSYMS__`），与厂商同流程对比 |
+| P2-d | **直接跑 genksyms 对比输出** | 同一份 `version.c` + 头文件，两边各跑一次，diff 结果 |
 
-**成功判据**：导出符号数 8,274 → ~15,532；`module_layout` `0xcb472513` → `0xe4a1dbce`；
-不符计数 `142/7/43/1` 开始下降。
+**方法要点**：genksyms 哈希**预处理后的文本**，所以差异来源可能是：
+1. 某个 `#ifdef` 分支（但 561 个守卫宏已排查，0 处不一致 ✗ 可能性低）
+2. **typedef / `const` / 宏展开的写法**（OEM 源码已对齐 ✗）
+3. **genksyms 自身版本差异** ← 现在最可疑
 
 ### P2：`module_layout` 闭包 100% 相同、CRC 却不同 —— 到底差在哪一层？
 
