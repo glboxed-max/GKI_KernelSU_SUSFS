@@ -107,7 +107,7 @@ jobs:
           ok=0
           for i in 1 2 3 4; do
             echo "===== Bazel 构建 第 $i 次 ====="
-            if tools/bazel build --config=fast --disk_cache=/home/runner/.cache/bazel \
+            if tools/bazel build --config=fast --notrim --disk_cache=/home/runner/.cache/bazel \
                  //common:kernel_aarch64/Image > /tmp/bazel.log 2>&1; then
               ok=1; break
             fi
