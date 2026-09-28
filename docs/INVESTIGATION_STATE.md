@@ -272,6 +272,58 @@ OEM 独有文件（全树仅 3 个）     project.config
 
 ---
 
+### ★★★ P7【重大发现】从手机 A/B 槽提取镜像 —— 确认活动槽与 KernelSU 的真实加载方式
+
+**抓取的分区**（`su` + `dd`，保存于 `D:\neiheidaima\_re\phone_boot\`）：
+
+```
+boot_a=sdc38  100663296 B      boot_b=sdc72  100663296 B
+vendor_boot_a=sdc39 134217728 B   vendor_boot_b=sdc73 134217728 B
+init_boot_a=sdc40    8388608 B    init_boot_b=sdc74    8388608 B
+```
+
+**① 活动槽是 B**（`getprop ro.boot.slot_suffix = _b`）—— **我第一次抓的是非活动槽 A**，所以最初的结论全部要按槽位修正。
+
+**② 两个槽的内核版本不同**（把 LZ4-legacy 压缩的 ramdisk/内核解出后读版本串）：
+
+| 槽 | 内核版本串 | vermagic | module_layout |
+|---|---|---|---|
+| **A（非活动）** | `6.1.124-android14-11-maybe-dirty` | `…6.1.124… modversions vivo aarch64` | — |
+| **B（活动 ✓）** | `6.1.145-android14-11-maybe-dirty` | `…6.1.145… modversions vivo aarch64` | **0xe4a1dbce** ✓ |
+
+**③ 活动槽内核 = 我们的金标准**：把 `boot_b.img` 里的内核解出来（36,952,576 B）后测量：
+
+```
+boot_b.kernel :  module_layout = 0xe4a1dbce   对 4 个厂商模块 0 / 0 / 0 / 0 不符 ✓
+stock.elf     :  module_layout = 0xe4a1dbce   0 / 0 / 0 / 0 ✓
+```
+
+⇒ **`stock.elf` 确实就是手机正在跑的内核**，我们一直用的比对基准是对的 ✓
+
+**④ ★ 关键：KernelSU 模块的真实状态**（两个槽的 `init_boot` 里都有 `kernelsu.ko`，386,720 B）：
+
+```
+init_boot_a → kernelsu.ko    vermagic: 6.1.166-dirty SMP preempt mod_unload modversions aarch64
+init_boot_b → kernelsu.ko    vermagic: 6.1.166-dirty SMP preempt mod_unload modversions aarch64
+                                        ^^^^^^^                    ^^^^^^
+                              不是运行内核的 6.1.145              没有 vivo 标记
+```
+
+⇒ **这个模块的 vermagic 与正在运行的 6.1.145 内核根本对不上**（版本不同 + 缺 `vivo`），
+正常 `insmod` **必然被 `check_modinfo()` 拒绝**；但它确实出现在 `/proc/modules` 且 dmesg 有
+KernelSU 活动日志 ⇒ **它只能是通过 bypass 方式加载的**。
+
+**⇒ 对用户诉求的意义（重要）**：
+这台手机**当前可用的 KernelSU 方案本身就走着 bypass**（模块 vermagic 与内核不匹配）。
+也就是说，用户"不得使用任何关闭版本校验的绕过手段"这条约束，
+**比这台手机现在实际能用的方案还要严格**。
+
+**⑤ 附带确认**：`boot_a`/`boot_b` 里的内核与 ramdisk 都是 **LZ4-legacy 分块压缩**
+（magic `02 21 4C 18` + 逐块 `size(4)+data`）；解压脚本见 `parse_bootimg.py` / `extract_cpio.py`
+（cpio 解析需校验 13 个十六进制字段，否则会把压缩流里的字面量误认成 cpio 头）。
+
+---
+
 ### ★★ P2【唯一剩下的层次】genksyms 的输入文本 / 工具版本
 
 **排除进度**：
