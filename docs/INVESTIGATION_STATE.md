@@ -151,35 +151,69 @@ SukiSU 产物  : 6.1.145-android14-11-maybe-dirty SMP preempt mod_unload modvers
 
 ## 5. 待求证的问题（按优先级）
 
-### ★ P1：`trim` 从哪来？是不是 CRC 分歧的根因？
+### ★ P1【已确证根因】KMI 符号表裁剪 —— 就是 CRC 分歧的根源
 
-**已知线索**：构建日志里出现
+**证据（从两边内核内嵌的 `.config` 直接抠出，不需等构建）**：
+
 ```
-[275 / 278] Building kernel (lto=fast;trim) @//common:kernel_aarch64
-                                  ^^^^^^
+                        我们的构建              原厂（手机上跑的）
+CONFIG_TRIM_UNUSED_KSYMS     =y              # ... is not set      ← ★ 关键差异
+CONFIG_UNUSED_KSYMS_WHITELIST="abi_symbollist.raw"  (未出现)        ← ★ 关键差异
+配置项总数                2189 / 2237        3031
+=y                      2002 / 2063        2225
+=m（模块数）                75 / 62           665                  ← 差 10 倍
+配置行数                 7684 / 7646        9246
+导出符号数                8274               15532
+Image 大小               37.4 MB            42.4 MB
 ```
-但：
-- `CONFIG_TRIM_UNUSED_KSYMS` 在**三处配置里都是 `not set`**
-- 仓库构建链（`build-kernel` / `set-kernel-config` / `remove-protected-exports`）**都没有设置它**
-- bazel 命令只有 `--config=fast --disk_cache=…`
 
-**已布置的诊断**（commit `c7976a01`，crc-probe 工作流新增步骤，构建后 `always()` 打印）：
-- 生效 `.config` 的路径/总行数/`CONFIG_*` 项数（对照设备 9246 行 / 3028 项）
-- `TRIM_UNUSED_KSYMS` / `UNUSED_KSYMS_WHITELIST` / `MODVERSIONS` / `MODULE_SIG` / `LTO_*` 实际值
-- `=y` / `=m` 数量
-- `System.map` 的 `__ksymtab_` / `__kcrctab_` 条目数与 `module_layout` 项
-- `/tmp/bazel.log` 里的 `Building kernel (…` 配置串
+**机制（在 AOSP 的 `BUILD.bazel` 里找到）**：
 
-**为什么它可能解释一切**：`module_layout` 的闭包里包含 `struct kernel_symbol` 与整个导出机制；
-原厂「不裁剪（15.5k）」vs 我们「被裁到 8.3k」是这个量级上**唯一的差别**，
-也是唯一还能解释「对齐 150 处源码却完全不动 CRC」的可能。
+```
+BUILD.bazel:141   "kmi_symbol_list_strict_mode": True,
+BUILD.bazel:143   "kmi_symbol_list": "android/abi_gki_aarch64",
+BUILD.bazel:146   "additional_kmi_symbol_lists": [":aarch64_additional_kmi_symbol_lists"],
+BUILD.bazel:147   "protected_exports_list": "android/abi_gki_protected_exports_aarch64",
+```
 
-**拿到诊断后的分支**：
-| 结果 | 含义 | 动作 |
+⇒ **Kleaf 依据 `kmi_symbol_list` 生成 `abi_symbollist.raw`，并据此自动开启
+`CONFIG_TRIM_UNUSED_KSYMS=y` + `CONFIG_UNUSED_KSYMS_WHITELIST="abi_symbollist.raw"`**，
+把导出裁剪到清单内的 **8,274** 个；**而原厂内核两项都没设、导出 15,532 个**。
+
+**⇒ 这解释了为什么「配置逐字节相同」却差这么多**：设备 defconfig 里写的是
+`# CONFIG_TRIM_UNUSED_KSYMS is not set`，**被构建链覆盖了** —— 之前只查配置文件，
+没查构建目标属性，所以一直找不到。
+
+**为什么它可能就是 CRC 之谜的答案**：`module_layout` 的类型闭包里包含
+`struct kernel_symbol` 与整个导出机制；「不裁剪 15532」vs「被裁到 8274」
+是这个量级上唯一的差别，也是唯一还能解释「对齐 150 处源码却完全不动 CRC」的可能。
+
+#### 已尝试且失败的修法（`6c767534`）
+
+直接 `sed` 删除 `BUILD.bazel` 里的 `kmi_symbol_list` / `additional_kmi_symbol_lists` /
+`protected_exports_list` ⇒ **构建失败**：
+
+```
+ERROR: common/BUILD.bazel:139:22: Creating abi_symbollist.raw
+       @//common:kernel_aarch64_raw_kmi_symbol_list failed (Exit 1)
+```
+
+原因：`//common:kernel_aarch64_raw_kmi_symbol_list` 目标**依赖**该属性，删掉后无米下锅。
+已回滚（`d9cd1062`），仓库恢复可构建状态。
+
+#### 正确的修法方向（下一步）
+
+**要点：改「是否裁剪」这个开关，而不是删清单。**
+
+| 候选 | 说明 | 备注 |
 |---|---|---|
-| `TRIM_UNUSED_KSYMS=y`（尽管 defconfig 写 not set） | fragment 覆盖 | 加 final fragment 强制关，重出，看 `module_layout` 是否变成 `0xe4a1dbce` |
-| 仍 `not set` 但 `=m` 很多 | 驱动被编成模块 | 转向「哪些驱动该内建」 |
-| `UNUSED_KSYMS_WHITELIST` 被设置 | 白名单机制 | 换成原厂那份 `android/abi_gki_aarch64_vivo` |
+| a | 找 Kleaf 的对应开关（`--notrim` / `--trim_unused_ksyms` 之类）或 target 属性 | **Kleaf 不在 `kernel/common` 克隆里，而在 `kernel/build` 仓库** ⇒ 本地 grep 查不到，需在 CI 里读或另克隆 |
+| b | 把 `kmi_symbol_list` 指向**覆盖面更大的清单**（合并 `abi_gki_aarch64` + `abi_gki_aarch64_mtk` + `abi_gki_aarch64_vivo`） | OEM 树里三份都在；但仍是被裁剪的子集，只能逼近 |
+| c | 直接 patch Kleaf 里启用 `TRIM_UNUSED_KSYMS` 的那条规则 | 最彻底，但要找到规则所在 |
+| d | 让 Kleaf 不生成 whitelist（清空 `unused_ksyms_whitelist` 属性） | 需确认属性名 |
+
+**成功判据**：导出符号数 8,274 → ~15,532；`module_layout` `0xcb472513` → `0xe4a1dbce`；
+不符计数 `142/7/43/1` 开始下降。
 
 ### P2：`module_layout` 闭包 100% 相同、CRC 却不同 —— 到底差在哪一层？
 
