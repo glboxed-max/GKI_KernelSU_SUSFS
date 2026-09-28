@@ -324,6 +324,55 @@ KernelSU 活动日志 ⇒ **它只能是通过 bypass 方式加载的**。
 
 ---
 
+### ★★★★ P8【改变判断的发现】vendor_boot 里装着**两套**模块，面向**两个不同 ABI**
+
+**方法**：用用户提供的 `magiskboot.exe`（Windows 版）解包，结果与手写解析器**字节数完全一致**
+（kernel 36,952,576 / init_boot ramdisk 7,967,192）⇒ 两条路径互相验证：
+
+```
+boot_b        HEADER_VER 4  KERNEL_SZ 17422634  KERNEL_FMT lz4_legacy  → kernel
+init_boot_b   HEADER_VER 4  RAMDISK_SZ 4030428  RAMDISK_FMT lz4_legacy → ramdisk.cpio
+vendor_boot_b VENDOR_BOOT_HDR v4  RAMDISK_SZ 119871812  RAMDISK_FMT raw → ramdisk.cpio + dtb(451179)
+```
+
+**`vendor_boot_b` 的 ramdisk（120 MB / 81 个分片）展开后 = 180,338,688 B，cpio 成员 1282 个，
+其中 604 个 `.ko` 模块**（已全部抽出到 `D:\neiheidaima\_re\phone_boot\vendor_mods\`）。
+
+**★★ 关键：这 604 个模块是两套，面向两个不同内核：**
+
+| 目录 | 面向 | `module_layout` |
+|---|---|---|
+| `lib/modules/*.ko` | **厂商内核**（手机现在跑的） | **`0xe4a1dbce`** ✓ 与 stock.elf 一致 |
+| **`lib/modules/6.1-gki/*.ko`** | **标准 GKI 内核** | **`0xea759d7f`** ★ |
+
+**⇒ `0xea759d7f` 正是①我们标准 GKI 构建算出的值、②小米 PLK110(6.1.157) 厂商模块要求的值。**
+**⇒ 也就是说：这台设备本来就预置了一整套面向标准 GKI 的厂商模块，且是厂商自己编译的。**
+
+**⇒ 这条发现直接改变判断**：
+
+```
+之前：厂商模块只认 0xe4a1dbce ⇒ 我们的 GKI 内核永远加载不了它们（死路）
+现在：设备里另有一套面向 0xea759d7f 的模块 ⇒ "自编译 GKI 内核"路线重新可行 ✓
+```
+
+**同时解释了验收脚本第一次"失败"的原因**：我把两套面向不同 ABI 的模块混在一起统计，
+二者互不匹配本来就是应该的（原厂内核对 GKI 那套也会大量不符）。
+
+**验收工具**：`accept_all.py`（内核侧从 ELF 的 `__ksymtab`/`__kcrctab` 建 `name→CRC`；
+模块侧解析 `__versions`，条目 64 字节 = u64 crc + char name[56]）。
+**已单点验证两侧解析器都正确**：
+
+```
+stock.elf    module_layout=0xe4a1dbce  kmalloc_caches=0xb5c66f9d   ✓ 与真值一致
+Image.elf    module_layout=0x973d4800  kmalloc_caches=0x21f38a09   ✓ 与 measure.py 一致
+vivo_ts.ko   __versions=306 条  module_layout=0xe4a1dbce          ✓ 与真值一致
+```
+
+**另**：在全部 604 个模块里搜 `rsc_*` —— **只有引用（`system_heap.ko`），没有任何模块定义它**
+⇒ 进一步确认 `rsc_*` 由内核里缺失的 `kernel/vivo_rsc/` 提供 ✓
+
+---
+
 ### ★★ P2【唯一剩下的层次】genksyms 的输入文本 / 工具版本
 
 **排除进度**：
