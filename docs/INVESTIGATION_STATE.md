@@ -223,6 +223,55 @@ ERROR: common/BUILD.bazel:139:22: Creating abi_symbollist.raw
 
 ---
 
+### ★★★ P6【重大发现】厂商源码包是**不完整的** —— 缺 `kernel/vivo_rsc/`
+
+**发现路径**：对比导出符号清单（原厂 `stock.elf` vs 我们 `--notrim` 后的产物）
+
+```
+原厂  15532 个导出符号
+我们  15361 个
+原厂独有 171    我们独有 0        ← 我们是原厂的【严格子集】，一个都不多
+```
+
+**缺的 171 个里，最大一块是 `rsc:*` 共 67 个**：
+`rsc_root_dir` / `rsc_chown_to_system` / `rsc_cpu_maxcore` / `rsc_debug` / `rsc_init_done` …
+
+**而 `rsc_*` 正是 `mtk_fpsgo.ko` 那"58 个未导出符号"的来源。**
+
+**追到根**：
+
+```
+vivo_src/Kconfig:34            source "kernel/vivo_rsc/Kconfig"
+vivo_src/kernel/vivo_rsc/      不存在 ✗
+vivo_src/kernel/ 子目录        bpf cgroup configs debug dma entry events futex gcov irq
+                               kcsan livepatch locking module power printk rcu sched time trace
+                               ← 没有 vivo_rsc
+OEM 独有文件（全树仅 3 个）     project.config
+                               include/linux/sensors.h
+                               include/soc/nvt/vis_display.h
+```
+
+⇒ **厂商源码包引用了自己没带上的目录 `kernel/vivo_rsc/`。**
+
+**影响（重要）**：
+
+1. **这份 tar 包无法忠实复现设备内核** —— 至少缺一整个 `vivo_rsc` 子系统（提供 67 个厂商模块依赖的导出符号）
+2. **路线 C（用厂商源码当基座）因此受阻** —— 除非用户能拿到缺失的 `kernel/vivo_rsc/`
+3. 这也与另一个独立证据吻合：**该源码包编不出 vermagic 里的 `vivo` 标记**
+   ⇒ 两个证据共同说明：**它不是设备内核的完整构建源**
+4. **但不影响 P2 的结论** —— `module_layout` 的 CRC 差异仍然与源码无关（闭包内文件都已对齐）
+
+**待用户行动**：
+- 向厂商/社区索取完整的 `kernel/vivo_rsc/` 目录（或描述其内容的文档）
+- 或确认该 tar 包是否为"开源合规包"（只含 AOSP 部分 + 少量头文件）
+
+**另注（次要，但有用）**：那 171 个里还有一批 `__SCK__tp_func_android_vh_*`
+（静态调用键）—— 对应的是我在"追踪钩子"那一组**主动撤掉**的钩子
+（`android_vh_do_async_mmap_readahead`、`android_vh_throttle_direct_reclaim_bypass` 等）。
+若要与原厂导出集合完全一致，那些钩子应保留 —— 但实测证明它们与 CRC 无关。
+
+---
+
 ### ★★ P2【唯一剩下的层次】genksyms 的输入文本 / 工具版本
 
 **排除进度**：
