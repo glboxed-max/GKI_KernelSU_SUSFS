@@ -113,6 +113,40 @@ jobs:
           done
           [ "$ok" = "1" ] || { echo "构建失败"; exit 1; }
 
+      - name: 打印生效后的 .config 关键项（诊断导出裁剪机制）
+        if: always()
+        working-directory: ${{ github.workspace }}/kernel
+        run: |
+          set -uo pipefail
+          CFG=""
+          for c in bazel-bin/common/kernel_aarch64/.config common/bazel-bin/common/kernel_aarch64/.config; do
+            [ -f "$c" ] && CFG="$c" && break
+          done
+          if [ -z "$CFG" ]; then
+            echo "=== 找不到生效 .config，全树查找 ==="
+            find . -maxdepth 7 -name '.config' -path '*kernel_aarch64*' 2>/dev/null | head
+            exit 0
+          fi
+          echo "=== 生效配置: $CFG ==="
+          echo "  总行数: $(grep -c . "$CFG")    CONFIG_* 行数: $(grep -c '^CONFIG_' "$CFG")"
+          echo "  （对照：设备实际 config 为 9246 行 / 3028 项）"
+          echo "=== 裁剪 / 导出 / LTO 相关 ==="
+          grep -E '^#? ?CONFIG_(TRIM_UNUSED_KSYMS|UNUSED_KSYMS_WHITELIST|MODVERSIONS|MODULE_SIG|LTO_CLANG|LTO_CLANG_THIN|LTO_CLANG_FULL|LTO_NONE)' "$CFG" || echo "  （以上各项均未出现）"
+          echo "=== 驱动内建/模块统计 ==="
+          echo "  =y : $(grep -c '=y$' "$CFG")    =m : $(grep -c '=m$' "$CFG")"
+          echo "=== System.map 里的导出符号条目数（直接印证 __ksymtab 数）==="
+          for m in bazel-bin/common/kernel_aarch64/System.map common/bazel-bin/common/kernel_aarch64/System.map; do
+            if [ -f "$m" ]; then
+              echo "  $m"
+              echo "    __ksymtab_ 条目: $(grep -c '__ksymtab_' "$m")"
+              echo "    __kcrctab_ 条目: $(grep -c '__kcrctab_' "$m")"
+              echo "    module_layout : $(grep -m1 ' __ksymtab_module_layout$' "$m" || echo '(未找到)')"
+              break
+            fi
+          done
+          echo "=== bazel 配置串（看 lto=...;trim 是否存在）==="
+          grep -m 3 -E 'Building kernel \(' /tmp/bazel.log 2>/dev/null || echo "  （日志中未出现）"
+
       - name: 失败时上传 bazel 日志（供无 token 的协作者取用）
         if: failure()
         uses: actions/upload-artifact@v4
