@@ -324,6 +324,63 @@ KernelSU 活动日志 ⇒ **它只能是通过 bypass 方式加载的**。
 
 ---
 
+### ★ P9 `vr.ko` 与 `vivo_rsc.ko` 的发现（含对我前面两次结论的更正）
+
+**起因**：用户要求再查一遍 vendor_boot 解出的文件里有没有 `vr.ko`。
+
+**找到的东西**（`vendor_boot_b` 的 ramdisk，1281 个 cpio 成员里）：
+
+```
+lib/modules/vr.ko             厂商套  210,560 B
+lib/modules/6.1-gki/vr.ko     GKI 套  211,296 B
+lib/modules/vivo_rsc.ko       厂商套   10,232 B
+lib/modules/6.1-gki/vivo_rsc.ko GKI 套 10,232 B
+vklp：整个 ramdisk 里出现 0 次 —— 该名字确实不存在
+```
+
+#### 更正 ①：`vr.ko` **是存在的**
+
+我早前说"设备上找不到 `vr.ko`"——**错了**。它在 `vendor_boot` 的 **ramdisk** 里；
+运行时的 ramdisk 内容**不以文件形式可见**（`/proc/modules` 只有已加载的 585 个，里面没有它），
+所以全盘 `find` 找不到 ≠ 不存在。**教训：要找首阶段模块必须解 ramdisk，不能只在文件系统里搜。**
+
+#### 更正 ②：`vivo_rsc.ko` 是**假模块**，P6 的结论**依然成立**
+
+```
+description = "VIVO RSC Driver Fake v0.2"      ← 名字里就写着 Fake
+name        = vivo_rsc
+__versions  = 只有 2 条（_printk / module_layout）
+未定义符号  = 只有 _printk、__this_module
+导出符号    = 无（没有任何 __ksymtab_ 符号）
+字符串      = "rsc_fake: rsc init" / "rsc_fake: rsc exit"
+```
+
+**⇒ 它是个空壳占位模块，不提供任何符号。**
+⇒ 所以"`rsc_*` 不由任何模块提供"这一判断**成立**，`rsc_*` 只能来自内核，
+   而内核里提供它的正是源码包缺失的 `kernel/vivo_rsc/` ✓
+⇒ **这个 "Fake" 桩本身就是旁证**：厂商把真正的 RSC 代码放在内核里，模块侧只留了个假的。
+
+#### 两套 `vr.ko` 的实测对照（重要）
+
+| | 厂商套 `vr.ko` | GKI 套 `vr.ko` |
+|---|---|---|
+| vermagic | `6.1.145… modversions **vivo** aarch64` | `6.1.145… modversions aarch64` ← **无 vivo** |
+| `module_layout` | **`0xe4a1dbce`** | **`0xea759d7f`** |
+| `__versions` | 127 条 | 125 条 |
+| 对原厂内核 | **一致 127 / 不符 0** ✓ | 一致 86 / 不符 39 |
+| 对我们内核 | 一致 92 / **不符 35** | 一致 86 / **不符 39** |
+
+**⇒ 两点结论**：
+
+1. **两套模块的 vermagic 互斥**：厂商套要 `vivo` 标记、GKI 套不要。
+   我们现在为对齐厂商套加了 `vivo` ⇒ **反过来会拒掉 GKI 套**。
+2. **GKI 套不属于我们**：它对我们内核（86/39）与对原厂内核（86/39）**结果完全相同**
+   ⇒ 我们的内核在它眼里与原厂内核一样不匹配。
+   ⇒ 它是厂商另做的一个 GKI 风味构建（`module_layout` 恰为 GKI 值，但逐符号 CRC 不同）。
+   ⇒ **用"6.1-gki 那套模块绕过 CRC 难题"这条路，到此用 125 个符号逐一验过，确认不通。**
+
+---
+
 ### ★★★★ P8【改变判断的发现】vendor_boot 里装着**两套**模块，面向**两个不同 ABI**
 
 **方法**：用用户提供的 `magiskboot.exe`（Windows 版）解包，结果与手写解析器**字节数完全一致**
