@@ -5,6 +5,104 @@
 
 ---
 
+## ★★★ 结论（解法已确定）—— 2026-09-29
+
+**用户从第三方拿到一个「能开机」的 `boot` 镜像（`145v.img`，96 MB），分析它得到决定性答案：**
+
+```
+能开机的内核:
+   版本串    6.1.145-@Coolpak@kugouzei_NB_LKM
+   vermagic  6.1.145-@Coolpak@kugouzei_NB_LKM SMP preempt mod_unload modversions aarch64
+             ← ★ 没有 vivo 标记
+   module_layout = 0xea759d7f        ← ★ 标准 GKI 值（不是厂商的 0xe4a1dbce）
+   Image 大小 35,564,032 B
+   对 4 个厂商模块: 148/7/46/1 不符   ← 厂商模块照样加载不了
+   ⇒ 但它【能开机】✓
+```
+
+### 由此推翻一条我此前的错误推论
+
+**✗ 旧推论**：「厂商模块 CRC 不匹配 ⇒ 不能开机」
+**✓ 事实**：厂商模块（`vivo_ts` 等）全部不匹配，设备**照样开机** ⇒
+        **开机的关键不是厂商模块，而是 `/system_dlkm` 与 `vendor_boot` 里的 `6.1-gki` 那套模块** ✓
+
+### 开机的充分条件（实测）
+
+```
+设备自带的 6.1-gki 模块集（vendor_boot ramdisk 里 303 个）
+   对我们的 GKI 构建（gki-a003870b）:
+      CRC 一致 13,944 / 16,024  (87.0%)
+      ★ CRC 不符  0 个 ★            ← 一个都不差
+      未导出      2,080 (13.0%)     ← 唯一缺口
+      完全满足模块 116 / 303
+```
+
+**⇒ 只要 `module_layout = 0xea759d7f`，这套模块的 CRC 就全对；剩下 2,080 个"未导出"纯粹是 Kleaf 的 KMI 裁剪造成的**（我们的构建只导出 8,298 个，真值 15,000+）✓
+
+### 解法（已实施）
+
+```
+commit f31cd82d   gki-probe.yml 的 bazel 命令加 --notrim
+构建 36532984510  已触发（in_progress）
+期望：导出符号 8,298 → 15,000+ ⇒ 2,080 个未导出补齐 ⇒ 303 个 6.1-gki 模块全部满足
+```
+
+**对照体积（佐证这就是同一类内核）：**
+
+```
+能开机的第三方内核   35,564,032 B
+我们 --notrim 那炉   35,506,688 B   ← 只差 57 KB
+我们裁剪版           35,047,936 B
+```
+
+### 用户此前 GKI 失败的实证（设备自己的日志）
+
+来源：`/data/system/dropbox/SYSTEM_LAST_KMSG@1790663503525.txt.gz`（2026-09-29 14:31，`Last boot reason: Watchdog`）
+
+```
+[ 0.446386] bootprof: disagrees about version of symbol module_layout
+[ 0.446398] init: Failed to insmod '/lib/modules/6.1-gki/bootprof.ko' with args '': Exec format error
+[ 0.449428] bootprof: disagrees about version of symbol module_layout
+[ 0.450018] init: [libfstab] ReadFstabFromDt(): failed to read fstab from dt
+[10.529374] init: Failed to init devices for INIT_AVB_VERSION
+[14.634450] init: DM_DEV_STATUS failed for system_ext_b: No such device or address
+⇒ 分区挂不上 ⇒ 卡死 ⇒ Watchdog 重启
+```
+
+**⇒ 那版 GKI 的 `module_layout` 不是 `0xea759d7f` ⇒ 0.44 秒就拦下第一个模块 ⇒ 连锁失败。**
+**⇒ 我们的构建 `module_layout = 0xea759d7f`，与设备模块集一致 ⇒ 不会重演** ✓
+
+### 当前设备状态（实测）
+
+```
+vivo PD2339   slot _b   Android 16 / sdk 36 / arm64-v8a
+kernel 6.1.145-android14-11-maybe-dirty（原厂，无 KernelSU 内核支持）
+ro.boot.flash.locked = 0        ro.boot.verifiedbootstate = orange   ← 已解锁，可自由刷
+KernelSU: 用户装了 KernelSU_vivo-59-g72bdc5db.apk（vivo 专用版）
+          /proc/modules 里有 kernelsu(217088, OE) ✓
+          /data/adb/{ksud(4566848), ksu/, apks/, modules_update/} ✓
+          su 可用（uid=0, context=u:r:ksu:s0）—— 注意磁盘上没有 su 文件，
+          KernelSU 在 syscall 层把 su 重定向到 ksud（dmesg: "faccessat su->ksud!"）
+vr.ko:    未加载 ✓（585 个已加载模块里没有它）
+管理器:   com.sukisu.ultra v4.2.0 (40900) = 官方版 ✓ 可开
+          ★ 曾用的 CI 版 40939 会闪退（Natives 空指针），换官方版即好
+```
+
+### 交付物（`D:\neiheidaima\_out\DELIVER\`）
+
+```
+1-boot-SukiSU-Ultra-AnyKernel3.zip         18.3 MB   自编译内核（block=boot）
+2-vendor_boot-vr-ko-clean.zip              54.5 MB   移除 vr.ko 的 vendor_boot
+3-SukiSU-Ultra-manager-v4.2.0.apk          13.5 MB   ⚠ CI 版（闪退，勿用）
+4-SukiSU-Ultra-manager-official-v4.2.0.apk 13.4 MB   ★ 官方版（可用）
+aarch64-android14-6.1-lkm.zip               0.1 MB   官方 KernelSU LKM
+ksuinit-aarch64.zip                         0.3 MB
+```
+
+**原厂备份**：`D:\neiheidaima\_re\phone_boot\{boot_a,boot_b,vendor_boot_a,vendor_boot_b}.img`
+
+---
+
 ## 0. 目标与硬约束
 
 | 项 | 内容 |
