@@ -1,7 +1,12 @@
-# 运行概况快照 2026-09-29T01:13:06Z
+# 运行概况快照 2026-09-29T06:55:06Z
 
 ```
-36506834884  DSH Fetch Failed Build Log  in_progress/null  98fa4160  2026-09-29T01:13:02Z
+36533613033  DSH Fetch Failed Build Log  in_progress/null  f6a4b371  2026-09-29T06:55:00Z
+36533584243  Validate  completed/success  f6a4b371  2026-09-29T06:54:41Z
+36532984510  GKI Stock Probe (原厂 gki_defconfig 基线)  in_progress/null  f31cd82d  2026-09-29T06:48:01Z
+36532984504  Validate  completed/success  f31cd82d  2026-09-29T06:48:01Z
+36531419959  Sync Kernel Matrix  completed/failure  7e1ae3e0  2026-09-29T06:30:29Z
+36506834884  DSH Fetch Failed Build Log  completed/success  98fa4160  2026-09-29T01:13:02Z
 36504992095  Build Kernels  completed/success  98fa4160  2026-09-29T00:49:59Z
 36487204743  DSH Fetch Failed Build Log  completed/success  53569a71  2026-09-28T21:36:17Z
 36471513311  Validate  completed/success  53569a71  2026-09-28T19:20:08Z
@@ -21,9 +26,4 @@
 36455929779  Validate  completed/success  f545ed9e  2026-09-28T17:07:41Z
 36452517488  Validate  completed/success  c7976a01  2026-09-28T16:38:37Z
 36452517441  CRC Probe (原厂 config ABI 对齐验证)  completed/success  c7976a01  2026-09-28T16:38:37Z
-36447751355  DSH Fetch Failed Build Log  completed/success  22ee1afa  2026-09-28T15:59:33Z
-36439916960  Build Kernels  completed/success  22ee1afa  2026-09-28T14:57:38Z
-36439513247  Build Kernels  completed/success  22ee1afa  2026-09-28T14:54:30Z
-36407348398  Validate  completed/success  22ee1afa  2026-09-28T10:03:20Z
-36407348384  CRC Probe (原厂 config ABI 对齐验证)  completed/success  22ee1afa  2026-09-28T10:03:20Z
 ```
